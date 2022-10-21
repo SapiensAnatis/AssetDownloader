@@ -1,12 +1,9 @@
 name: build
 
 on:
-  pull_request:
   push:
     branches:
       - master
-env:
-  HUSKY: 0
 
 jobs:
   build:
@@ -22,6 +19,6 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Install dependencies
-        run: dotnet restore DragaliaAPI
+        run: dotnet restore
       - name: Build
-        run: dotnet build DragaliaAPI --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore
