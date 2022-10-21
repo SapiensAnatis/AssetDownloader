@@ -40,11 +40,7 @@ public static class Functions
         var client = new HttpClient(ph);
         string zipFilepath = System.IO.Path.GetTempFileName();
 
-        using (
-            HttpResponseMessage response = await client.GetAsync(
-                "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master"
-            )
-        )
+        using (HttpResponseMessage response = await client.GetAsync(RepoUrl))
         {
             using FileStream fs = File.Open(zipFilepath, FileMode.Open);
             await response.Content.CopyToAsync(fs);

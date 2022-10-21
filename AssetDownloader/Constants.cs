@@ -12,6 +12,9 @@ public static class Constants
     public const string AriaOptions =
         "--save-session-interval=60 --conditional-get=true --auto-file-renaming=false --summary-interval=0 --optimize-concurrent-downloads=true --show-console-readout=false  --download-result=full";
 
+    public const string RepoUrl =
+        "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master";
+
     public const string ClonedRepoFolder = "dl-datamine";
 
     public const string Platform = "Android";

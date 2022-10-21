@@ -6,5 +6,5 @@ Using archived file manifests, this program constructs URLs to the Dragalia Lost
 
 The total size of the master assets is about 38GB. The English localisation assets are about 5GB.
 
-The program's main responsibility is to fetch the manifest JSON and parse it -- the list of URLs is then handed off to [aria2](https://aria2.github.io/manual/en/html/aria2c.html#description). It is capable of of resuming a partially-completed manifest download and it will also parallelize the downloads.
+The program's main responsibility is to fetch the manifest JSON and parse it -- the list of URLs is then handed off to [aria2](https://aria2.github.io/manual/en/html/aria2c.html#description). This tool is capable of resuming a partially-completed manifest download and it will also parallelize the downloads.
 
