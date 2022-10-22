@@ -9,7 +9,7 @@ namespace AssetDownloader;
 
 public static class Functions
 {
-    public static void WriteAriaFile(Manifest m, FileStream file)
+    public static async Task WriteAriaFile(Manifest m, FileStream file)
     {
         foreach (Asset a in m.AllAssets)
         {
@@ -20,7 +20,7 @@ public static class Functions
                 $"\n\tdir={DownloadOutputFolder}/{Platform}/{m.ManifestName}/{id}"
                 + $"\n\tout={a.Hash}";
 
-            file.Write(Encoding.UTF8.GetBytes(url + opts + "\n"));
+            await file.WriteAsync(Encoding.UTF8.GetBytes(url + opts + "\n"));
         }
     }
 

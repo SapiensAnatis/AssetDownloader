@@ -23,7 +23,7 @@ for (int i = 0; i < manifestDirs.Length; i++)
 {
     DirectoryInfo directory = manifestDirs[i];
     string manifestName = directory.Name.Split("_")[1];
-    string ariaFilePath = Path.Combine("aria_session", $"aria_input_{manifestName}.txt");
+    string ariaFilePath = Path.Combine("aria_session", $"aria_input_{manifestName}");
 
     Console.WriteLine($"Processing manifest {manifestName} ({i + 1}/{manifestDirs.Length})");
 
@@ -33,8 +33,6 @@ for (int i = 0; i < manifestDirs.Length; i++)
         await InvokeAria(ariaFilePath);
         continue;
     }
-
-    using var fs = File.Open(ariaFilePath, FileMode.CreateNew);
 
     List<string> paths = new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
 
@@ -47,15 +45,18 @@ for (int i = 0; i < manifestDirs.Length; i++)
     if (Download_ZH_TW)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_tw.manifest.json"));
 
-    foreach (string path in paths)
+    using (var fs = File.Create(ariaFilePath))
     {
-        Manifest m =
-            JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
-            ?? throw new JsonException("JSON deserialization failed");
+        foreach (string path in paths)
+        {
+            Manifest m =
+                JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
+                ?? throw new JsonException("JSON deserialization failed");
 
-        m.ManifestName = manifestName;
+            m.ManifestName = manifestName;
 
-        WriteAriaFile(m, fs);
+            await WriteAriaFile(m, fs);
+        }
     }
 
     await InvokeAria(ariaFilePath);
