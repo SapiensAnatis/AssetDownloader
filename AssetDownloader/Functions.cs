@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http.Handlers;
 using System.Text;
@@ -32,13 +33,18 @@ public static class Functions
         ph.HttpReceiveProgress += (_, args) =>
         {
             // GitHub doesn't send args.TotalBytes :(
+            // This value is just what I measured it to be
+            string percent = ((float)args.BytesTransferred / 635812219).ToString(
+                "P2",
+                CultureInfo.InvariantCulture
+            );
             Console.Write(
-                $"Download progress: {Math.Round((double)args.BytesTransferred / 1e6)}MB of approx. 636MB\r"
+                $"\tDownload progress: {Math.Round((double)args.BytesTransferred / 1e6)}MB of approx. 636MB ({percent})\r"
             );
         };
 
         var client = new HttpClient(ph);
-        string zipFilepath = System.IO.Path.GetTempFileName();
+        string zipFilepath = Path.GetTempFileName();
 
         using (HttpResponseMessage response = await client.GetAsync(RepoUrl))
         {
@@ -46,12 +52,12 @@ public static class Functions
             await response.Content.CopyToAsync(fs);
         }
 
-        Console.WriteLine("\nUnzipping download...");
+        Console.WriteLine("\n\tUnzipping download...");
         using ZipArchive zip = ZipFile.OpenRead(zipFilepath);
         zip.ExtractToDirectory(ClonedRepoFolder);
     }
 
-    public static async Task InvokeAria(string inputFile)
+    public static ProcessStartInfo CreateAriaProcess(string inputFile)
     {
         ProcessStartInfo startInfo =
             new()
@@ -65,8 +71,6 @@ public static class Functions
                 WindowStyle = ProcessWindowStyle.Normal
             };
 
-        using Process p =
-            Process.Start(startInfo) ?? throw new Exception("Failed to start aria2c.exe");
-        await p.WaitForExitAsync();
+        return startInfo;
     }
 }
