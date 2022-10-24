@@ -15,17 +15,19 @@ else
 }
 
 string manifestPath = Path.Combine("dl-datamine", "dl-datamine-master", "manifest");
-DirectoryInfo[] manifestDirs = new DirectoryInfo(manifestPath).GetDirectories();
+IEnumerable<DirectoryInfo> manifestDirs = new DirectoryInfo(manifestPath)
+    .GetDirectories()
+    .OrderByDescending(x => x.Name);
 
 Directory.CreateDirectory("aria_session");
 
-for (int i = 0; i < manifestDirs.Length; i++)
+for (int i = 0; i < manifestDirs.Count(); i++)
 {
-    DirectoryInfo directory = manifestDirs[i];
+    DirectoryInfo directory = manifestDirs.ElementAt(i);
     string manifestName = directory.Name.Split("_")[1];
     string ariaFilePath = Path.Combine("aria_session", $"aria_input_{manifestName}");
 
-    Console.WriteLine($"Processing manifest {manifestName} ({i + 1}/{manifestDirs.Length})");
+    Console.WriteLine($"Processing manifest {manifestName} ({i + 1}/{manifestDirs.Count()})");
 
     if (File.Exists(ariaFilePath))
     {
