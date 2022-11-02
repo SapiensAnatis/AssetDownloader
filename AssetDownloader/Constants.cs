@@ -10,7 +10,7 @@ public static class Constants
 
     // See: https://aria2.github.io/manual/en/html/aria2c.html#options
     public const string AriaOptions =
-        "-j5 --save-session-interval=120 --conditional-get=true --auto-file-renaming=false --summary-interval=0 --show-console-readout=false  --download-result=full";
+        "-j16 --enable-mmap --save-session-interval=120 --conditional-get=true --auto-file-renaming=false --summary-interval=0 --show-console-readout=false  --download-result=full";
 
     public const string RepoUrl =
         "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master";
