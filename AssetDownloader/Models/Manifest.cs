@@ -12,8 +12,6 @@ public class Manifest
 
     public IEnumerable<Asset> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
 
-    public string ManifestName { get; set; } = string.Empty;
-
     [JsonConstructor]
     public Manifest(IEnumerable<AssetCategory> categories, IEnumerable<Asset> rawAssets)
     {

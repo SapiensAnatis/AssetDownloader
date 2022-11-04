@@ -10,20 +10,7 @@ namespace AssetDownloader;
 
 public static class Functions
 {
-    public static async Task WriteAriaFile(Manifest m, FileStream file)
-    {
-        foreach (Asset a in m.AllAssets)
-        {
-            string id = $"{a.Hash[..2]}";
-
-            string url = $"{BaseUrl}/{id}/{a.Hash}";
-            string opts =
-                $"\n\tdir={DownloadOutputFolder}/{Platform}/{m.ManifestName}/{id}"
-                + $"\n\tout={a.Hash}";
-
-            await file.WriteAsync(Encoding.UTF8.GetBytes(url + opts + "\n"));
-        }
-    }
+    public static async Task WriteAriaFile(FileStream file, ISet<string> hashes) { }
 
     public static async Task CloneRepo()
     {
@@ -39,7 +26,7 @@ public static class Functions
                 CultureInfo.InvariantCulture
             );
             Console.Write(
-                $"\tDownload progress: {Math.Round((double)args.BytesTransferred / 1e6)}MB of approx. 636MB ({percent})\r"
+                $"\tDownload progress: {Math.Round(args.BytesTransferred / 1e6)}MB of approx. 636MB ({percent})\r"
             );
         };
 
@@ -66,8 +53,8 @@ public static class Functions
                 Arguments =
                     $"-i {inputFile} --save-session {inputFile} --stop-with-process {Environment.ProcessId} "
                     + AriaOptions,
-                CreateNoWindow = false,
-                UseShellExecute = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
                 WindowStyle = ProcessWindowStyle.Normal
             };
 

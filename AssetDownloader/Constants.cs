@@ -10,7 +10,14 @@ public static class Constants
 
     // See: https://aria2.github.io/manual/en/html/aria2c.html#options
     public const string AriaOptions =
-        "-j16 --enable-mmap --save-session-interval=120 --conditional-get=true --auto-file-renaming=false --summary-interval=0 --show-console-readout=false  --download-result=full";
+        "-j16 "
+        + "--enable-mmap "
+        + "--save-session-interval=120 "
+        + "--conditional-get=true "
+        + "--auto-file-renaming=false "
+        + "--console-log-level=warn "
+        + "--show-console-readout=false "
+        + "--summary-interval=0";
 
     public const string RepoUrl =
         "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master";
@@ -22,4 +29,6 @@ public static class Constants
     public const string BaseUrl = "http://dragalialost.akamaized.net/dl/assetbundles/" + Platform;
 
     public const string DownloadOutputFolder = "DownloadResult";
+
+    public const string AriaFilePath = "aria_session.txt";
 }

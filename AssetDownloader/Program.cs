@@ -4,6 +4,7 @@ using static AssetDownloader.Functions;
 using static AssetDownloader.Constants;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 
 // Download and unzip dl-datamine repository
 if (!Directory.Exists("dl-datamine"))
@@ -17,77 +18,99 @@ else
 }
 
 string manifestPath = Path.Combine("dl-datamine", "dl-datamine-master", "manifest");
-IEnumerable<DirectoryInfo> manifestDirs = new DirectoryInfo(manifestPath)
+
+List<DirectoryInfo> manifestDirs = new DirectoryInfo(manifestPath)
     .GetDirectories()
-    .OrderByDescending(x => x.Name);
+    .OrderByDescending(x => x.Name)
+    .ToList();
 
-Directory.CreateDirectory("aria_session");
-
+// Collect all hashes
+HashSet<string> hashes = new();
 for (int i = 0; i < manifestDirs.Count(); i++)
 {
     DirectoryInfo directory = manifestDirs.ElementAt(i);
     string manifestName = directory.Name.Split("_")[1];
-    string ariaFilePath = Path.Combine("aria_session", $"aria_input_{manifestName}");
 
-    Console.WriteLine($"Processing manifest {manifestName} ({i + 1}/{manifestDirs.Count()})");
-
-    if (!File.Exists(ariaFilePath))
-    {
-        List<string> paths =
-            new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
-
-        if (Download_EN_US)
-            paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
-
-        if (Download_ZH_CN)
-            paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_cn.manifest.json"));
-
-        if (Download_ZH_TW)
-            paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_tw.manifest.json"));
-
-        using var fs = File.Create(ariaFilePath);
-        foreach (string path in paths)
-        {
-            Manifest m =
-                JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
-                ?? throw new JsonException("JSON deserialization failed");
-
-            m.ManifestName = manifestName;
-
-            await WriteAriaFile(m, fs);
-        }
-    }
-    else
-    {
-        Console.WriteLine("\tExisting session detected, resuming...");
-    }
-
-    // Each URL is one file
-    int totalFiles = File.ReadLines(ariaFilePath)
-        .Select(x => x.Contains("dragalialost.akamaized.net"))
-        .Count();
-
-    // Make the directory before aria does, because we might try and count before the first download completes
-    DirectoryInfo downloadDir = Directory.CreateDirectory(
-        $"{DownloadOutputFolder}/{Platform}/{manifestName}"
+    Console.Write(
+        $"Reading manifest {manifestName} ({i + 1}/{manifestDirs.Count()})             \r"
     );
 
-    ProcessStartInfo ariaInfo = CreateAriaProcess(ariaFilePath);
-    Process aria = Process.Start(ariaInfo) ?? throw new Exception("Failed to start aria2c.exe");
+    List<string> paths = new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
 
-    while (!aria.HasExited)
+    if (Download_EN_US)
+        paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
+
+    if (Download_ZH_CN)
+        paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_cn.manifest.json"));
+
+    if (Download_ZH_TW)
+        paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_tw.manifest.json"));
+
+    foreach (string path in paths)
     {
-        int downloadedFiles = downloadDir
-            .EnumerateFiles("*.*", SearchOption.AllDirectories)
-            .Where(x => !x.Name.Contains("aria2")) // Ignore aria2 temp files, otherwise progress bar jumps up and down
-            .Count();
+        Manifest m =
+            JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
+            ?? throw new JsonException("JSON deserialization failed");
 
-        string percent = ((float)downloadedFiles / totalFiles).ToString(
-            "P2",
-            CultureInfo.InvariantCulture
-        );
-        Console.Write($"\t{downloadedFiles} / {totalFiles} files downloaded ({percent})\r");
-
-        await Task.Delay(1000);
+        hashes.UnionWith(m.AllAssets.Select(x => x.Hash));
     }
+}
+
+Console.WriteLine();
+int totalFiles = hashes.Count;
+
+if (!File.Exists(AriaFilePath))
+{
+    using FileStream file = File.Create(AriaFilePath);
+    // Create aria file
+    foreach (string hash in hashes)
+    {
+        string id = $"{hash[..2]}";
+
+        string url = $"{BaseUrl}/{id}/{hash}";
+        string opts = $"\n\tdir={DownloadOutputFolder}/{Platform}/{id}" + $"\n\tout={hash}";
+
+        await file.WriteAsync(Encoding.UTF8.GetBytes(url + opts + "\n"));
+    }
+}
+else
+{
+    Console.WriteLine("Existing session detected, resuming...");
+}
+
+// Free up some memory
+hashes.Clear();
+manifestDirs.Clear();
+
+// Make the directory before aria does, because we might try and count before the first download completes
+DirectoryInfo downloadDir = Directory.CreateDirectory($"{DownloadOutputFolder}/{Platform}");
+
+ProcessStartInfo ariaInfo = CreateAriaProcess(AriaFilePath);
+Process aria = Process.Start(ariaInfo) ?? throw new Exception("Failed to start aria2c.exe");
+
+Console.WriteLine("Commencing download...");
+StreamReader ariaStdout = aria.StandardOutput;
+while (!aria.HasExited)
+{
+    int downloadedFiles = downloadDir
+        .EnumerateFiles("*.*", SearchOption.AllDirectories)
+        .Where(x => !x.Name.Contains("aria2")) // Ignore aria2 temp files, otherwise progress bar jumps up and down
+        .Count();
+
+    string percent = ((float)downloadedFiles / totalFiles).ToString(
+        "P2",
+        CultureInfo.InvariantCulture
+    );
+    Console.Write($"{downloadedFiles} / {totalFiles} files downloaded ({percent})\r");
+
+    // Only reading 1 line per second would typically make the stdout read far
+    // behind the actual process, but we are only listening for warnings/errors
+    // so it is probably fine.
+    string? stdoutData = ariaStdout.ReadLine();
+    if (!string.IsNullOrWhiteSpace(stdoutData))
+    {
+        Console.WriteLine(stdoutData);
+    }
+
+    await Task.Delay(1000);
 }
