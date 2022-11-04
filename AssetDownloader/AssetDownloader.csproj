@@ -13,9 +13,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="aria2c">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
 		<None Update="aria2c.exe">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
