@@ -47,7 +47,5 @@ jobs:
         uses: softprops/action-gh-release@v0.1.14
         with:
           files: |
-            ./artifacts/win-x64.zip/win-x64.zip
-            ./artifacts/osx-x64.zip/osx-x64.zip
-            ./artifacts/linux-x64.zip/linux-x64.zip
+            ./artifacts/**/*
 
