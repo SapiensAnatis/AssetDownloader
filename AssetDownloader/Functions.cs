@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http.Handlers;
+using System.Runtime.InteropServices;
 using System.Text;
 using AssetDownloader.Models;
 using static AssetDownloader.Constants;
@@ -46,15 +47,23 @@ public static class Functions
 
     public static ProcessStartInfo CreateAriaProcess(string inputFile)
     {
+        string ariaBinary = "aria2c";
+
+        if (OperatingSystem.IsWindows())
+            ariaBinary = "aria2c.exe";
+
         ProcessStartInfo startInfo =
             new()
             {
-                FileName = "aria2c.exe",
+                FileName = ariaBinary,
                 Arguments =
-                    $"-i {inputFile} --save-session {inputFile} --stop-with-process {Environment.ProcessId} "
+                    $"-i {inputFile} "
+                    + $"--save-session {inputFile} "
+                    + $"--stop-with-process {Environment.ProcessId} "
                     + AriaOptions,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
+                CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Normal
             };
 
