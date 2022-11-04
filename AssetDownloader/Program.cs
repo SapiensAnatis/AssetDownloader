@@ -87,9 +87,16 @@ DirectoryInfo downloadDir = Directory.CreateDirectory($"{DownloadOutputFolder}/{
 
 ProcessStartInfo ariaInfo = CreateAriaProcess(AriaFilePath);
 Process aria = Process.Start(ariaInfo) ?? throw new Exception("Failed to start aria2c.exe");
+aria.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+{
+    if (!string.IsNullOrWhiteSpace(e.Data))
+    {
+        Console.WriteLine(e.Data);
+    }
+};
+aria.BeginOutputReadLine();
 
 Console.WriteLine("Commencing download...");
-StreamReader ariaStdout = aria.StandardOutput;
 while (!aria.HasExited)
 {
     int downloadedFiles = downloadDir
@@ -102,15 +109,6 @@ while (!aria.HasExited)
         CultureInfo.InvariantCulture
     );
     Console.Write($"{downloadedFiles} / {totalFiles} files downloaded ({percent})\r");
-
-    // Only reading 1 line per second would typically make the stdout read far
-    // behind the actual process, but we are only listening for warnings/errors
-    // so it is probably fine.
-    string? stdoutData = ariaStdout.ReadLine();
-    if (!string.IsNullOrWhiteSpace(stdoutData))
-    {
-        Console.WriteLine(stdoutData);
-    }
 
     await Task.Delay(1000);
 }
