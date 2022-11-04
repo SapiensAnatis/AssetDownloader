@@ -2,8 +2,8 @@ name: build
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -20,5 +20,23 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Install dependencies
         run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      - name: Publish linux-x64
+        run: |
+        dotnet publish -c Release --no-restore -o ./linux/ -r linux-x64
+        zip -r linux-x64.zip ./linux/*
+      - name: Publish windows-x64
+        run: |
+        dotnet publish -c Release --no-restore -o ./windows/ -r win-x64
+        zip -r win-x64.zip ./windows/*
+      - name: Publish mac-x64
+        run: |
+        dotnet publish -c Release --no-restore -o ./mac/ -r osx-x64
+        zip -r mac-x64.zip ./mac/*
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          files:
+            win-x64.zip
+            mac-x64.zip
+            linux-x64.zip
+
