@@ -1,13 +1,13 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace AssetDownloader.Models;
 
 public class Manifest
 {
-    [JsonPropertyName("categories")]
+    [JsonProperty("categories")]
     public IEnumerable<AssetCategory> Categories { get; init; }
 
-    [JsonPropertyName("rawAssets")]
+    [JsonProperty("rawAssets")]
     public IEnumerable<Asset> RawAssets { get; init; }
 
     public IEnumerable<Asset> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
@@ -20,6 +20,6 @@ public class Manifest
     }
 }
 
-public record AssetCategory([property: JsonPropertyName("assets")] List<Asset> Assets);
+public record AssetCategory([property: JsonProperty("assets")] List<Asset> Assets);
 
-public record Asset([property: JsonPropertyName("hash")] string Hash);
+public record Asset([property: JsonProperty("hash")] string Hash);
