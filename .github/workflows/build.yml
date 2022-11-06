@@ -1,9 +1,9 @@
 name: build
 
 on:
-  push:
-    tags:
-      - "*"
+  push
+#    tags:
+#      - "*"
 
 jobs:
   build:
@@ -23,6 +23,8 @@ jobs:
         run: dotnet restore -r ${{ matrix.rid }}
       - name: Publish
         run: dotnet publish -c Release --no-restore -r ${{ matrix.rid }} --no-self-contained
+      - name: ls
+        run: ls -R
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
