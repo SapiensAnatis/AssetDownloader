@@ -20,6 +20,38 @@ public class Manifest
     }
 }
 
-public record AssetCategory([property: JsonProperty("assets")] List<Asset> Assets);
+public class AssetCategory
+{
+    [JsonProperty("assets")]
+    public List<Asset> Assets { get; init; }
 
-public record Asset([property: JsonProperty("hash")] string Hash);
+    public AssetCategory(List<Asset> assets)
+    {
+        this.Assets = assets;
+    }
+}
+
+public class Asset
+{
+    [JsonProperty("name")]
+    public string Name { get; init; }
+
+    [JsonProperty("hash")]
+    public string Hash { get; init; }
+
+    public Asset(string name, string hash)
+    {
+        this.Name = name;
+        this.Hash = hash;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Asset asset && this.Name == asset.Name;
+    }
+
+    public override int GetHashCode()
+    {
+        return this.Name.GetHashCode();
+    }
+}

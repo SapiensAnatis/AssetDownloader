@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         dotnet-version: [ '6.0.x' ]
-        rid: ['win-x64', 'linux-x64', 'osx-x64']
+        rid: ['win-x64', 'linux-x64', 'osx-x64', 'osx-arm64']
 
     steps:
       - uses: actions/checkout@v3
@@ -22,14 +22,12 @@ jobs:
       - name: Install dependencies
         run: dotnet restore -r ${{ matrix.rid }}
       - name: Publish
-        run: | 
-          dotnet publish -c Release --no-restore -o ./${{ matrix.rid }} -r ${{ matrix.rid }} --no-self-contained
-          zip -r ${{ matrix.rid }}.zip ./${{ matrix.rid }}/*
+        run: dotnet publish -c Release --no-restore -r ${{ matrix.rid }} --no-self-contained
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.rid }}.zip
-          path: ./${{ matrix.rid }}.zip
+          name: ${{ matrix.rid }}
+          path: ./${{ matrix.rid }}
 
   make-release:
     needs: build
@@ -40,12 +38,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ./artifacts/
-      - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: ./artifacts/
       - name: Make release
         uses: softprops/action-gh-release@v0.1.14
         with:
-          files: |
-            ./artifacts/**/*
-
+          files: ./artifacts/**/*

@@ -2,16 +2,21 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http.Handlers;
-using System.Runtime.InteropServices;
-using System.Text;
-using AssetDownloader.Models;
 using static AssetDownloader.Constants;
 
 namespace AssetDownloader;
 
 public static class Functions
 {
-    public static async Task WriteAriaFile(FileStream file, ISet<string> hashes) { }
+    public static string GetFormattedPercent(long numerator, long denominator)
+    {
+        return ((float)numerator / denominator).ToString("P2", CultureInfo.InvariantCulture);
+    }
+
+    public static string GetHumanReadableFilesize(long filesize, int magnitude)
+    {
+        return Math.Round(filesize / Math.Pow(10, magnitude), 1).ToString("0.0");
+    }
 
     public static async Task CloneRepo()
     {
@@ -20,29 +25,28 @@ public static class Functions
 
         ph.HttpReceiveProgress += (_, args) =>
         {
-            // GitHub doesn't send args.TotalBytes :(
-            // This value is just what I measured it to be
-            string percent = ((float)args.BytesTransferred / 635812219).ToString(
-                "P2",
-                CultureInfo.InvariantCulture
+            string percent = GetFormattedPercent(
+                args.BytesTransferred,
+                args.TotalBytes ?? RepoSizeBytes
             );
-            Console.Write(
-                $"\tDownload progress: {Math.Round(args.BytesTransferred / 1e6)}MB of approx. 636MB ({percent})\r"
-            );
+
+            string megabytes = $"{GetHumanReadableFilesize(args.BytesTransferred, 6)} MB";
+
+            Console.Write($" - Download progress: {megabytes} of approx. 636 MB ({percent})\r");
         };
 
-        var client = new HttpClient(ph);
+        HttpClient client = new(ph);
         string zipFilepath = Path.GetTempFileName();
 
-        using (HttpResponseMessage response = await client.GetAsync(RepoUrl))
         {
+            using HttpResponseMessage response = await client.GetAsync(RepoUrl);
             using FileStream fs = File.Open(zipFilepath, FileMode.Open);
+
             await response.Content.CopyToAsync(fs);
         }
 
-        Console.WriteLine("\n\tUnzipping download...");
-        using ZipArchive zip = ZipFile.OpenRead(zipFilepath);
-        zip.ExtractToDirectory(ClonedRepoFolder);
+        Console.WriteLine("\n - Unzipping download...");
+        ZipFile.ExtractToDirectory(zipFilepath, ClonedRepoFolder);
     }
 
     public static ProcessStartInfo CreateAriaProcess(string inputFile)
