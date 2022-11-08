@@ -1,5 +1,7 @@
 ﻿# Dragalia Lost Asset Downloader
 
+Download from the [releases page](https://github.com/SapiensAnatis/AssetDownloader/releases/tag/v12)
+
 Based on a Python script written by Ceris: https://gist.github.com/CerisWhite/bf160e54ab4b99668e4dc3a38f9185ea
 
 Using archived file manifests, this program constructs URLs to the Dragalia Lost CDN and downloads asset files for archival purposes.
