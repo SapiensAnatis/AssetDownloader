@@ -52,8 +52,7 @@ public class Downloader
         await Console.Out.WriteLineAsync("Starting asset download threads.");
 
         var tasks = newAssets.Select(asset =>
-                DownloadFile(asset.DownloadPath, _downloadFolder + asset.DownloadPath, asset.HashBytes,
-                    asset.Size))
+                DownloadFile(asset.DownloadPath, _downloadFolder + asset.DownloadPath, asset.HashBytes))
             .ToList();
 
         var stopwatch = new Stopwatch();
@@ -82,7 +81,7 @@ public class Downloader
         return actualHash.SequenceEqual(expectedHash);
     }
 
-    public async Task DownloadFile(string downloadPath, string filePath, byte[] expectedHash, long fileSize)
+    private async Task DownloadFile(string downloadPath, string filePath, byte[] expectedHash)
     {
         await _downloadSemaphore.WaitAsync();
 
@@ -94,9 +93,10 @@ public class Downloader
                 if (VerifyFileHash(fileData, expectedHash))
                 {
                     Interlocked.Add(ref _downloadedBytes, fileData.LongLength);
-                    _downloadSemaphore.Release();
+                    _downloadSemaphore.Release(); // File I/O is slow so we don't wait for it
 
                     await File.WriteAllBytesAsync(filePath, fileData);
+                    Interlocked.Increment(ref _downloadedAssets); // Only increment this now so we make sure that the file has been written prior to exiting
                     return;
                 }
 
@@ -107,6 +107,7 @@ public class Downloader
             {
                 await Console.Out.WriteLineAsync($"Failed to download file {downloadPath}. Exception: {ex}");
                 _downloadSemaphore.Release();
+                return;
             }
         }
     }
