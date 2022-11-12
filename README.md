@@ -10,6 +10,10 @@ The expected download size, depending on the enabled localisations, is about 16G
 
 The program's main responsibility is to fetch the manifest JSON, parse it, and download the contained files. This tool is capable of resuming a partially-completed manifest download and it will also parallelize the downloads.
 
+## Requirements
+
+- [.NET 7 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) installed 
+
 ## Configuration
 
 ```
