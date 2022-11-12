@@ -2,32 +2,7 @@
 
 public static class Constants
 {
-    public const bool Download_EN_US = true;
-
-    public const bool Download_ZH_CN = false;
-
-    public const bool Download_ZH_TW = false;
-
-    public const string AriaConcurrentFiles = "16";
-
-    // See: https://aria2.github.io/manual/en/html/aria2c.html#options
-    public const string AriaOptions =
-        $"-j{AriaConcurrentFiles} "
-        + "--enable-mmap "
-        + "--save-session-interval=120 "
-        + "--conditional-get=true "
-        + "--auto-file-renaming=false "
-        + "--console-log-level=warn "
-        + "--show-console-readout=false "
-        + "--summary-interval=0";
-
-    public const string DownloadOutputFolder = "DownloadResult";
-
     public const string ClonedRepoFolder = "dl-datamine";
-
-    public const string Platform = "Android";
-
-    public const string AriaFilePath = "aria_session.txt";
 
     public const string RepoUrl =
         "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master";
@@ -35,5 +10,21 @@ public static class Constants
     // Need this to estimate cloning progress -- GitHub does not report the total size of the download
     public const int RepoSizeBytes = 635812219;
 
-    public const string BaseUrl = "http://dragalialost.akamaized.net/dl/assetbundles/" + Platform;
+    public const string BaseUrl = "http://dragalialost.akamaized.net/dl/assetbundles/";
+
+    public const string LatestManifestName = "20221002_y2XM6giU6zz56wCm";
+
+    public const string HelpText = """
+        Usage: AssetDownloader.exe <arguments>
+        Valid arguments:
+            "-h" or "--help": Prints this help text. 
+            "-s" or "--skip-old-assets": Only downloads the newest assets. (default: false)
+            "-en" or "--download-en": Adds EN files to the download. (default: false)
+            "-cn" or "--download-cn": Adds CN files to the download. (default: false)
+            "-tw" or "--download-tw": Adds TW files to the download. (default: false)
+            "-o <folder>" or "--output-folder <folder>": Sets the output folder. (default: DownloadOutput)
+            "-m <count>" or "--max-downloads <count>": Sets the maximum number of concurrent downloads. (default: 16)
+            "-p <platform>" or "--platform <platform>": Sets the version of assets to download.
+                Valid options: Android, iOS (default: Android)
+        """;
 }
