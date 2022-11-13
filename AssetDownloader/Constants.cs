@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public const string ClonedRepoFolder = "dl-datamine";
+    public const string ClonedRepoFolder = "DragaliaManifests";
 
     public const string RepoUrl =
         "https://codeload.github.com/DragaliaLostRevival/DragaliaManifests/zip/refs/heads/master";

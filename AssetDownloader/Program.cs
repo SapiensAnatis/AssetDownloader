@@ -21,7 +21,7 @@ if (!skipOldAssets && platformName == Constants.Ios)
 }
 
 // Download and unzip dl-datamine repository
-if (!Directory.Exists("dl-datamine"))
+if (!Directory.Exists(Constants.ClonedRepoFolder))
 {
     Console.WriteLine("Downloading required manifests from the dl-datamine repository...");
     await Utils.CloneRepo();
@@ -35,7 +35,7 @@ else
 HashSet<AssetInfo> hashes = new();
 await Console.Out.WriteLineAsync("\nParsing manifests...");
 
-var manifestPath = Path.Combine("DragaliaManifests", "DragaliaManifests-master", platformName);
+var manifestPath = Path.Combine(Constants.ClonedRepoFolder, "DragaliaManifests-master", platformName);
 
 var manifestDirs = skipOldAssets
     ? new List<DirectoryInfo>
