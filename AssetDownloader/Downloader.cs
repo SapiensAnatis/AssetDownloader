@@ -63,7 +63,7 @@ public class Downloader
         while (_downloadedAssets != totalAssets)
         {
             await Console.Out.WriteAsync(
-                    $" - Download progress: " +
+                    " - Download progress: " +
                     $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB " +
                     $"({_downloadedAssets}/{totalAssets}) " +
                     "              \r");

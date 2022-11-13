@@ -5,12 +5,14 @@ public static class Constants
     public const string ClonedRepoFolder = "dl-datamine";
 
     public const string RepoUrl =
-        "https://codeload.github.com/CerisWhite/dl-datamine/zip/refs/heads/master";
+        "https://codeload.github.com/DragaliaLostRevival/DragaliaManifests/zip/refs/heads/master";
 
     // Need this to estimate cloning progress -- GitHub does not report the total size of the download
     public const int RepoSizeBytes = 635812219;
 
     public const string BaseUrl = "http://dragalialost.akamaized.net/dl/assetbundles/";
+    public const string Android = "Android";
+    public const string Ios = "iOS";
 
     public const string LatestManifestName = "20221002_y2XM6giU6zz56wCm";
 

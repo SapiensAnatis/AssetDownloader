@@ -26,7 +26,7 @@ public static class Utils
         downloadCn = false;
         downloadTw = false;
         maxConcurrent = 16;
-        platformName = "Android";
+        platformName = Constants.Android;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -57,8 +57,13 @@ public static class Utils
                     break;
                 case "-p" or "--platform":
                     i++;
-                    platformName = args[i];
-                    validArguments &= platformName is not "Android" or "iOS";
+                    var input = args[i].ToLower();
+                    if (input == Constants.Android.ToLower())
+                        platformName = Constants.Android;
+                    else if (input == Constants.Ios.ToLower())
+                        platformName = Constants.Ios;
+                    else
+                        validArguments = false;
                     break;
             }
         }

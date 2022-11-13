@@ -13,6 +13,13 @@ if (!Utils.VerifyArguments(args,
     return;
 }
 
+if (!skipOldAssets && platformName == Constants.Ios)
+{
+    Console.WriteLine("Error: Cannot download all iOS assets as only the latest manifest has been preserved.");
+    Console.WriteLine("Please use the --skip-old-assets flag to acknowledge this issue.");
+    return;
+}
+
 // Download and unzip dl-datamine repository
 if (!Directory.Exists("dl-datamine"))
 {
@@ -28,7 +35,7 @@ else
 HashSet<AssetInfo> hashes = new();
 await Console.Out.WriteLineAsync("\nParsing manifests...");
 
-var manifestPath = Path.Combine("dl-datamine", "dl-datamine-master", "manifest");
+var manifestPath = Path.Combine("DragaliaManifests", "DragaliaManifests-master", platformName);
 
 var manifestDirs = skipOldAssets
     ? new List<DirectoryInfo> {new(Path.Join(manifestPath, Constants.LatestManifestName))}
@@ -74,3 +81,5 @@ await Console.Out.WriteLineAsync("\nFinished manifest parsing.\n");
 
 var downloader = new Downloader(hashes, outputFolder, platformName, maxConcurrent);
 await downloader.DownloadFiles();
+
+await Console.Out.WriteLineAsync("Program finished.");
