@@ -38,7 +38,14 @@ await Console.Out.WriteLineAsync("\nParsing manifests...");
 var manifestPath = Path.Combine("DragaliaManifests", "DragaliaManifests-master", platformName);
 
 var manifestDirs = skipOldAssets
-    ? new List<DirectoryInfo> {new(Path.Join(manifestPath, Constants.LatestManifestName))}
+    ? new List<DirectoryInfo>
+    {
+        new(Path.Join(manifestPath, 
+            platformName == Constants.Android 
+                ? Constants.LatestAndroidManifestName 
+                : Constants.LatestIosManifestName)
+        )
+    }
     : new DirectoryInfo(manifestPath)
         .GetDirectories()
         .OrderByDescending(x => x.Name)

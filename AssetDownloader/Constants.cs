@@ -14,7 +14,8 @@ public static class Constants
     public const string Android = "Android";
     public const string Ios = "iOS";
 
-    public const string LatestManifestName = "20221002_y2XM6giU6zz56wCm";
+    public const string LatestAndroidManifestName = "20221002_y2XM6giU6zz56wCm";
+    public const string LatestIosManifestName = "20221002_b1HyoeTFegeTexC0";
 
     public const string HelpText = """
         Usage: AssetDownloader.exe <arguments>
