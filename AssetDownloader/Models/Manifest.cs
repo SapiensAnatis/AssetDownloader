@@ -1,19 +1,12 @@
-﻿using Newtonsoft.Json;
-
-namespace AssetDownloader.Models;
+﻿namespace AssetDownloader.Models;
 
 public class Manifest
 {
-    [JsonProperty("categories")]
-    public IEnumerable<AssetCategory> Categories { get; init; }
+    public List<AssetCategory> Categories { get; }
+    public List<AssetInfo> RawAssets { get; }
+    public IEnumerable<AssetInfo> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
 
-    [JsonProperty("rawAssets")]
-    public IEnumerable<Asset> RawAssets { get; init; }
-
-    public IEnumerable<Asset> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
-
-    [JsonConstructor]
-    public Manifest(IEnumerable<AssetCategory> categories, IEnumerable<Asset> rawAssets)
+    public Manifest(List<AssetCategory> categories, List<AssetInfo> rawAssets)
     {
         Categories = categories;
         RawAssets = rawAssets;
@@ -22,36 +15,42 @@ public class Manifest
 
 public class AssetCategory
 {
-    [JsonProperty("assets")]
-    public List<Asset> Assets { get; init; }
+    public List<AssetInfo> Assets { get; }
 
-    public AssetCategory(List<Asset> assets)
+    public AssetCategory(List<AssetInfo> assets)
     {
-        this.Assets = assets;
+        Assets = assets;
     }
 }
 
-public class Asset
+public class AssetInfo
 {
-    [JsonProperty("name")]
-    public string Name { get; init; }
+    public string Name { get; }
+    public string Hash { get; }
+    public long Size { get; }
 
-    [JsonProperty("hash")]
-    public string Hash { get; init; }
+    internal string HashId { get; }
+    internal byte[] HashBytes { get; }
+    internal string DownloadPath { get; }
 
-    public Asset(string name, string hash)
+    public AssetInfo(string name, string hash, long size)
     {
-        this.Name = name;
-        this.Hash = hash;
+        Name = name;
+        Hash = hash;
+        Size = size;
+
+        HashId = hash[..2];
+        HashBytes = Base32.ToBytes(hash);
+        DownloadPath = $"{HashId}/{hash}";
     }
 
     public override bool Equals(object? obj)
     {
-        return obj is Asset asset && this.Name == asset.Name;
+        return obj is AssetInfo asset && Hash == asset.Hash;
     }
 
     public override int GetHashCode()
     {
-        return this.Name.GetHashCode();
+        return Hash.GetHashCode();
     }
 }
