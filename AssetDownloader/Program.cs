@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 if (!Utils.VerifyArguments(args,
         out var outputFolder, out var platformName,
         out var skipOldAssets, out var downloadEn,
-        out var downloadEu, out var downloadCn
+        out var downloadEu, out var downloadCn,
         out var downloadTw, out var maxConcurrent)
     )
 {

@@ -2,6 +2,8 @@
 
 Download from the [releases page](https://github.com/SapiensAnatis/AssetDownloader/releases/latest)
 
+NOTE: On newer versions of OS X, app signing requirements may prevent you from running the binary directly. If you encounter issues, download the source code and the .NET SDK, and use `dotnet run AssetDownloader.csproj`.
+
 Based on a Python script written by Ceris: https://gist.github.com/CerisWhite/bf160e54ab4b99668e4dc3a38f9185ea
 
 Using archived file manifests, this program constructs URLs to the Dragalia Lost CDN and downloads asset files for archival purposes.
