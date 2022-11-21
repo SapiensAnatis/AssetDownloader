@@ -2,11 +2,11 @@
 using AssetDownloader;
 using Newtonsoft.Json;
 
-if (!Utils.VerifyArguments(args, 
+if (!Utils.VerifyArguments(args,
         out var outputFolder, out var platformName,
         out var skipOldAssets, out var downloadEn,
-        out var downloadCn, out var downloadTw,
-        out var maxConcurrent)
+        out var downloadEu, out var downloadCn
+        out var downloadTw, out var maxConcurrent)
     )
 {
     Console.WriteLine(Constants.HelpText);
@@ -40,9 +40,9 @@ var manifestPath = Path.Combine(Constants.ClonedRepoFolder, "DragaliaManifests-m
 var manifestDirs = skipOldAssets
     ? new List<DirectoryInfo>
     {
-        new(Path.Join(manifestPath, 
-            platformName == Constants.Android 
-                ? Constants.LatestAndroidManifestName 
+        new(Path.Join(manifestPath,
+            platformName == Constants.Android
+                ? Constants.LatestAndroidManifestName
                 : Constants.LatestIosManifestName)
         )
     }
@@ -67,6 +67,9 @@ for (int i = 0; i < manifestDirs.Count; i++)
 
     if (downloadEn)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
+
+    if (downloadEu)
+        paths.Add(Path.Combine(directory.FullName, "assetbundle.en_eu.manifest.json"));
 
     if (downloadCn)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_cn.manifest.json"));

@@ -17,12 +17,13 @@ public static class Utils
     }
 
     public static bool VerifyArguments(string[] args, out string outputFolder, out string platformName,
-        out bool skipOldAssets, out bool downloadEn, out bool downloadCn, out bool downloadTw, out int maxConcurrent)
+        out bool skipOldAssets, out bool downloadEn, out bool downloadEu, out bool downloadCn, out bool downloadTw, out int maxConcurrent)
     {
         var validArguments = true;
         outputFolder = "DownloaderOutput";
         skipOldAssets = false;
         downloadEn = false;
+        downloadEu = false;
         downloadCn = false;
         downloadTw = false;
         maxConcurrent = 16;
@@ -40,6 +41,10 @@ public static class Utils
                     break;
                 case "-en" or "--download-en":
                     downloadEn = true;
+                    break;
+                case "-eu" or "--download-eu":
+                    downloadEn = true;
+                    downloadEu = true;
                     break;
                 case "-cn" or "--download-cn":
                     downloadCn = true;
@@ -68,13 +73,14 @@ public static class Utils
             }
         }
 
-        return validArguments && downloadEn | downloadCn | downloadTw;
+        return validArguments && downloadEn | downloadEu | downloadCn | downloadTw;
     }
 
     public static async Task CloneRepo()
     {
         HttpClientHandler handler = new() { AllowAutoRedirect = true };
         ProgressMessageHandler ph = new(handler);
+        string total = $"{GetHumanReadableFilesize(Constants.RepoSizeBytes, 6)} MB";
 
         ph.HttpReceiveProgress += (_, args) =>
         {
@@ -85,7 +91,7 @@ public static class Utils
 
             var megabytes = $"{GetHumanReadableFilesize(args.BytesTransferred, 6)} MB";
 
-            Console.Write($" - Download progress: {megabytes} of approx. 636 MB ({percent})\r");
+            Console.Write($" - Download progress: {args.BytesTransferred} of approx. {total} ({percent})\r");
         };
 
         HttpClient client = new(ph);

@@ -8,7 +8,7 @@ public static class Constants
         "https://codeload.github.com/DragaliaLostRevival/DragaliaManifests/zip/refs/heads/master";
 
     // Need this to estimate cloning progress -- GitHub does not report the total size of the download
-    public const int RepoSizeBytes = 635812219;
+    public const int RepoSizeBytes = 637685460;
 
     public const string BaseUrl = "http://dragalialost.akamaized.net/dl/assetbundles/";
     public const string Android = "Android";
@@ -22,7 +22,8 @@ public static class Constants
         Valid arguments:
             "-h" or "--help": Prints this help text. 
             "-s" or "--skip-old-assets": Only downloads the newest assets. (default: false)
-            "-en" or "--download-en": Adds EN files to the download. (default: false)
+            "-en" or "--download-en": Adds EN_US files to the download. (default: false)
+            "-eu" or "--download-eu": Adds EN_EU and EN_US files to the download. (default: false)
             "-cn" or "--download-cn": Adds CN files to the download. (default: false)
             "-tw" or "--download-tw": Adds TW files to the download. (default: false)
             "-o <folder>" or "--output-folder <folder>": Sets the output folder. (default: DownloadOutput)
