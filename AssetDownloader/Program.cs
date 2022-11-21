@@ -65,11 +65,11 @@ for (int i = 0; i < manifestDirs.Count; i++)
     List<string> paths =
         new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
 
-    if (downloadEn)
-        paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
-
     if (downloadEu)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.en_eu.manifest.json"));
+
+    if (downloadEn)
+        paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
 
     if (downloadCn)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_cn.manifest.json"));

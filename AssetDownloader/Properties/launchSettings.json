@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AssetDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "-eu"
+    }
+  }
+}
