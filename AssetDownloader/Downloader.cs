@@ -17,7 +17,12 @@ public class Downloader
 
     private readonly ISet<AssetInfo> _assets;
 
-    public Downloader(ISet<AssetInfo> assets, string downloadFolder, string platform, int maxConcurrent = 16)
+    public Downloader(
+        ISet<AssetInfo> assets,
+        string downloadFolder,
+        string platform,
+        int maxConcurrent = 16
+    )
     {
         _assets = assets;
 
@@ -26,8 +31,10 @@ public class Downloader
 
         _downloadClient = new HttpClient();
         _downloadClient.BaseAddress = new Uri(Constants.BaseUrl + platform + '/');
-        _downloadClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent",
-            "UnityPlayer/2019.4.31f1 (UnityWebRequest/1.0, libcurl/7.75.0-DEV)");
+        _downloadClient.DefaultRequestHeaders.TryAddWithoutValidation(
+            "User-Agent",
+            "UnityPlayer/2019.4.31f1 (UnityWebRequest/1.0, libcurl/7.75.0-DEV)"
+        );
 
         _downloadedBytes = 0;
         _downloadedAssets = 0;
@@ -35,13 +42,24 @@ public class Downloader
 
     public async Task DownloadFiles()
     {
-        await Console.Out.WriteLineAsync("Filtering out unneeded assets.");
+        await Console.Out.WriteLineAsync(
+            "Filtering out unneeded assets. If the script has already run, this may take a long time."
+        );
         var newAssets = _assets
-            .Where(asset => !File.Exists(_downloadFolder + asset.DownloadPath) ||
-                            !VerifyFileHash(File.ReadAllBytes(_downloadFolder + asset.DownloadPath), asset.HashBytes))
+            .Where(
+                asset =>
+                    !File.Exists(_downloadFolder + asset.DownloadPath)
+                    || !VerifyFileHash(
+                        File.ReadAllBytes(_downloadFolder + asset.DownloadPath),
+                        asset.HashBytes
+                    )
+            )
             .ToList();
 
-        var totalBytesString = Utils.GetHumanReadableFilesize(newAssets.Sum(asset => asset.Size), 6);
+        var totalBytesString = Utils.GetHumanReadableFilesize(
+            newAssets.Sum(asset => asset.Size),
+            6
+        );
         var totalAssets = newAssets.Count;
 
         await Console.Out.WriteLineAsync("Creating directories.");
@@ -51,8 +69,15 @@ public class Downloader
 
         await Console.Out.WriteLineAsync("Starting asset download threads.");
 
-        var tasks = newAssets.Select(asset =>
-                DownloadFile(asset.DownloadPath, _downloadFolder + asset.DownloadPath, asset.HashBytes))
+        var tasks = newAssets
+            .Select(
+                asset =>
+                    DownloadFile(
+                        asset.DownloadPath,
+                        _downloadFolder + asset.DownloadPath,
+                        asset.HashBytes
+                    )
+            )
             .ToList();
 
         var stopwatch = new Stopwatch();
@@ -63,16 +88,19 @@ public class Downloader
         while (_downloadedAssets != totalAssets)
         {
             await Console.Out.WriteAsync(
-                    " - Download progress: " +
-                    $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB " +
-                    $"({_downloadedAssets}/{totalAssets}) " +
-                    "              \r");
+                " - Download progress: "
+                    + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB "
+                    + $"({_downloadedAssets}/{totalAssets}) "
+                    + "              \r"
+            );
 
-           await Task.Delay(10);
+            await Task.Delay(10);
         }
 
         stopwatch.Stop();
-        await Console.Out.WriteLineAsync($"\nAsset download completed. Time elapsed: {stopwatch.Elapsed}");
+        await Console.Out.WriteLineAsync(
+            $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed}"
+        );
     }
 
     private static bool VerifyFileHash(byte[] fileData, byte[] expectedHash)
@@ -101,11 +129,14 @@ public class Downloader
                 }
 
                 await Console.Out.WriteLineAsync(
-                    $"File {downloadPath} was downloaded but did not have the proper hash, retrying.");
+                    $"File {downloadPath} was downloaded but did not have the proper hash, retrying."
+                );
             }
             catch (Exception ex)
             {
-                await Console.Out.WriteLineAsync($"Failed to download file {downloadPath}. Exception: {ex}");
+                await Console.Out.WriteLineAsync(
+                    $"Failed to download file {downloadPath}. Exception: {ex.GetType().Name} -- {ex.Message}"
+                );
                 _downloadSemaphore.Release();
                 return;
             }

@@ -1,8 +1,7 @@
 {
-  "profiles": {
-    "AssetDownloader": {
-      "commandName": "Project",
-      "commandLineArgs": "-eu"
+    "profiles": {
+        "AssetDownloader": {
+            "commandName": "Project"
+        }
     }
-  }
 }

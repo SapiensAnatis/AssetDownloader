@@ -2,23 +2,33 @@
 using AssetDownloader;
 using Newtonsoft.Json;
 
-if (!Utils.VerifyArguments(args,
-        out var outputFolder, out var platformName,
-        out var skipOldAssets, out var downloadEn,
-        out var downloadEu, out var downloadCn,
-        out var downloadTw, out var maxConcurrent)
-    )
+Arguments parsedArgs = Utils.VerifyArguments(args);
+if (!parsedArgs.IsValid)
 {
-    Console.WriteLine(Constants.HelpText);
-    return;
+    Console.WriteLine("Detected invalid command-line arguments. Starting interactive mode...");
+    parsedArgs = Utils.InteractiveArgs();
 }
 
-if (!skipOldAssets && platformName == Constants.Ios)
+Console.WriteLine(Environment.NewLine);
+
+if (!parsedArgs.IsValid)
 {
-    Console.WriteLine("Error: Cannot download all iOS assets as only the latest manifest has been preserved.");
-    Console.WriteLine("Please use the --skip-old-assets flag to acknowledge this issue.");
-    return;
+    Console.WriteLine("Invalid arguments detected.");
+    Console.Write(Constants.HelpText);
+    Utils.FriendlyExit();
 }
+
+if (!parsedArgs.SkipOldAssets && parsedArgs.PlatformName == Constants.Ios)
+{
+    Console.WriteLine(
+        "Error: Cannot download all iOS assets as only the latest manifest has been preserved."
+    );
+    Console.WriteLine("Please use the --skip-old-assets flag to acknowledge this issue.");
+    Utils.FriendlyExit();
+}
+
+Console.WriteLine($"You have chosen the following options:");
+Console.WriteLine(parsedArgs);
 
 // Download and unzip dl-datamine repository
 if (!Directory.Exists(Constants.ClonedRepoFolder))
@@ -35,21 +45,25 @@ else
 HashSet<AssetInfo> hashes = new();
 await Console.Out.WriteLineAsync("\nParsing manifests...");
 
-var manifestPath = Path.Combine(Constants.ClonedRepoFolder, "DragaliaManifests-master", platformName);
+var manifestPath = Path.Combine(
+    Constants.ClonedRepoFolder,
+    "DragaliaManifests-master",
+    parsedArgs.PlatformName
+);
 
-var manifestDirs = skipOldAssets
+var manifestDirs = parsedArgs.SkipOldAssets
     ? new List<DirectoryInfo>
     {
-        new(Path.Join(manifestPath,
-            platformName == Constants.Android
-                ? Constants.LatestAndroidManifestName
-                : Constants.LatestIosManifestName)
+        new(
+            Path.Join(
+                manifestPath,
+                parsedArgs.PlatformName == Constants.Android
+                    ? Constants.LatestAndroidManifestName
+                    : Constants.LatestIosManifestName
+            )
         )
     }
-    : new DirectoryInfo(manifestPath)
-        .GetDirectories()
-        .OrderByDescending(x => x.Name)
-        .ToList();
+    : new DirectoryInfo(manifestPath).GetDirectories().OrderByDescending(x => x.Name).ToList();
 
 await Console.Out.WriteLineAsync("Starting manifest parsing.");
 
@@ -62,19 +76,18 @@ for (int i = 0; i < manifestDirs.Count; i++)
         $" - Parsing manifest {manifestName} ({i + 1}/{manifestDirs.Count})             \r"
     );
 
-    List<string> paths =
-        new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
+    List<string> paths = new() { Path.Combine(directory.FullName, "assetbundle.manifest.json") };
 
-    if (downloadEu)
+    if (parsedArgs.DownloadEu)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.en_eu.manifest.json"));
 
-    if (downloadEn)
+    if (parsedArgs.DownloadEn)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.en_us.manifest.json"));
 
-    if (downloadCn)
+    if (parsedArgs.DownloadCn)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_cn.manifest.json"));
 
-    if (downloadTw)
+    if (parsedArgs.DownloadTw)
         paths.Add(Path.Combine(directory.FullName, "assetbundle.zh_tw.manifest.json"));
 
     foreach (string path in paths)
@@ -89,7 +102,13 @@ for (int i = 0; i < manifestDirs.Count; i++)
 
 await Console.Out.WriteLineAsync("\nFinished manifest parsing.\n");
 
-var downloader = new Downloader(hashes, outputFolder, platformName, maxConcurrent);
+var downloader = new Downloader(
+    hashes,
+    parsedArgs.OutputFolder,
+    parsedArgs.PlatformName,
+    parsedArgs.MaxConcurrent
+);
 await downloader.DownloadFiles();
 
 await Console.Out.WriteLineAsync("Program finished.");
+Utils.FriendlyExit();
