@@ -2,6 +2,15 @@
 using AssetDownloader;
 using Newtonsoft.Json;
 
+AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+{
+    Exception e = (Exception)args.ExceptionObject;
+    Console.WriteLine($"An unhandled exception occurred: {e}");
+
+    if (args.IsTerminating)
+        Utils.FriendlyExit();
+};
+
 Arguments parsedArgs = Utils.VerifyArguments(args);
 if (!parsedArgs.IsValid)
 {
@@ -9,11 +18,13 @@ if (!parsedArgs.IsValid)
     parsedArgs = Utils.InteractiveArgs();
 }
 
-Console.WriteLine(Environment.NewLine);
+Console.WriteLine();
 
 if (!parsedArgs.IsValid)
 {
-    Console.WriteLine("Invalid arguments detected.");
+    Console.WriteLine(
+        "Invalid arguments detected. You must specify at least one localisation to download."
+    );
     Console.Write(Constants.HelpText);
     Utils.FriendlyExit();
 }
@@ -27,8 +38,8 @@ if (!parsedArgs.SkipOldAssets && parsedArgs.PlatformName == Constants.Ios)
     Utils.FriendlyExit();
 }
 
-Console.WriteLine($"You have chosen the following options:");
-Console.WriteLine(parsedArgs);
+Console.WriteLine($"You have chosen the following options:{Environment.NewLine}");
+Console.WriteLine($"{parsedArgs}{Environment.NewLine}");
 
 // Download and unzip dl-datamine repository
 if (!Directory.Exists(Constants.ClonedRepoFolder))

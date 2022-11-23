@@ -106,17 +106,24 @@ public static class Utils
         result.SkipOldAssets = InputPromptBool(
             "Skip old assets? This will reduce the size of the download, but you will not have files for older events."
         );
-        result.OutputFolder = InputPromptString("File-path for download result");
+        string outputFolder = InputPromptString(
+            "Filepath for download result: (default: DownloadOutput)"
+        );
+
+        if (string.IsNullOrWhiteSpace(outputFolder))
+            outputFolder = "DownloadOutput";
+
+        result.OutputFolder = outputFolder;
+
         result.MaxConcurrent = InputPromptInt("Maximum concurrent downloads (default: 16)", 16);
 
-        string platform;
-        platform = InputPromptString(
-            "Target asset platform? (1 = Android, 2 = iOS, default: 1/Android)"
+        string platform = InputPromptString(
+            "Target asset platform? (allowed values: 'iOS', 'Android', default: Android)"
         );
-        result.PlatformName = platform switch
+        result.PlatformName = platform.ToLower() switch
         {
-            "1" => Constants.Android,
-            "2" => Constants.Ios,
+            "android" => Constants.Android,
+            "ios" => Constants.Ios,
             _ => Constants.Android
         };
 
@@ -157,6 +164,7 @@ public static class Utils
     {
         Console.WriteLine($"{Environment.NewLine}{Environment.NewLine}Press Enter to exit...");
         Console.ReadLine();
+
         Environment.Exit(0);
     }
 
