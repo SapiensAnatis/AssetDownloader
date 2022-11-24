@@ -183,9 +183,7 @@ public static class Utils
 
             var megabytes = $"{GetHumanReadableFilesize(args.BytesTransferred, 6)} MB";
 
-            Console.Write(
-                $" - Download progress: {args.BytesTransferred} of approx. {total} ({percent})\r"
-            );
+            Console.Write($" - Download progress: {megabytes} of approx. {total} ({percent})\r");
         };
 
         HttpClient client = new(ph);
