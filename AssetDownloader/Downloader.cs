@@ -117,7 +117,7 @@ public class Downloader
 
         stopwatch.Stop();
         await Console.Out.WriteLineAsync(
-            $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed}"
+            $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}"
         );
     }
 
@@ -153,8 +153,11 @@ public class Downloader
             catch (Exception ex)
             {
                 await Console.Out.WriteLineAsync(
-                    $"Failed to download file {asset.DownloadPath}. Exception: {ex.GetType().Name} -- {ex.Message}"
+                    $"Failed to download file {asset.DownloadPath}. This download will be retried later."
                 );
+#if DEBUG // Runs if the app is built in 'Debug' mode
+                await Console.Out.WriteLineAsync($"{ex}");
+#endif
 
                 _failedAssets.Add(asset);
                 _downloadSemaphore.Release();
