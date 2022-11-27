@@ -109,6 +109,7 @@ public class Downloader
                 _downloadedBytes = 0;
                 _downloadedAssets = 0;
                 currentDownloadedAssets = _failedAssets.ToList();
+                _failedAssets.Clear();
             }
 
         } while (!_failedAssets.IsEmpty);
