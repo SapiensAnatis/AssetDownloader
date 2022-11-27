@@ -66,6 +66,10 @@ public class Downloader
 
         do
         {
+            _downloadedBytes = 0;
+            _downloadedAssets = 0;
+            _failedAssets.Clear();
+
             var totalBytesString = Utils.GetHumanReadableFilesize(
                 currentDownloadedAssets.Sum(asset => asset.Size),
                 6
@@ -106,10 +110,7 @@ public class Downloader
             if (!_failedAssets.IsEmpty)
             {
                 await Console.Out.WriteLineAsync("\nSome assets failed to download. Retrying them.");
-                _downloadedBytes = 0;
-                _downloadedAssets = 0;
                 currentDownloadedAssets = _failedAssets.ToList();
-                _failedAssets.Clear();
             }
 
         } while (!_failedAssets.IsEmpty);
