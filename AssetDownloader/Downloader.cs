@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using AssetDownloader.Models;
 
@@ -16,6 +16,7 @@ public class Downloader
     private long _downloadedAssets;
 
     private readonly ISet<AssetInfo> _assets;
+    private readonly ConcurrentBag<AssetInfo> _failedAssets;
 
     public Downloader(
         ISet<AssetInfo> assets,
@@ -25,6 +26,7 @@ public class Downloader
     )
     {
         _assets = assets;
+        _failedAssets = new ConcurrentBag<AssetInfo>();
 
         _downloadFolder = Path.GetFullPath(downloadFolder) + Path.DirectorySeparatorChar;
         _downloadSemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
@@ -45,61 +47,77 @@ public class Downloader
         await Console.Out.WriteLineAsync(
             "Filtering out unneeded assets. If the script has already run, this may take a long time."
         );
-        var newAssets = _assets
-            .Where(
-                asset =>
-                    !File.Exists(_downloadFolder + asset.DownloadPath)
-                    || !VerifyFileHash(
-                        File.ReadAllBytes(_downloadFolder + asset.DownloadPath),
-                        asset.HashBytes
-                    )
-            )
-            .ToList();
 
-        var totalBytesString = Utils.GetHumanReadableFilesize(
-            newAssets.Sum(asset => asset.Size),
-            6
-        );
-        var totalAssets = newAssets.Count;
+        var currentDownloadedAssets = _assets
+            .AsParallel()
+            .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
+            .Where(
+                asset => !File.Exists(_downloadFolder + asset.DownloadPath) ||
+                         !VerifyFileHash(File.ReadAllBytes(_downloadFolder + asset.DownloadPath), asset.HashBytes))
+            .ToList();
 
         await Console.Out.WriteLineAsync("Creating directories.");
 
-        foreach (var hashPrefix in newAssets.Select(asset => asset.HashId).Distinct())
+        foreach (var hashPrefix in currentDownloadedAssets.Select(asset => asset.HashId).Distinct())
             Directory.CreateDirectory(_downloadFolder + hashPrefix);
-
-        await Console.Out.WriteLineAsync("Starting asset download threads.");
-
-        var tasks = newAssets
-            .Select(
-                asset =>
-                    DownloadFile(
-                        asset.DownloadPath,
-                        _downloadFolder + asset.DownloadPath,
-                        asset.HashBytes
-                    )
-            )
-            .ToList();
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await Console.Out.WriteLineAsync("Asset download started.");
-
-        while (_downloadedAssets != totalAssets)
+        do
         {
-            await Console.Out.WriteAsync(
-                " - Download progress: "
-                    + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB "
-                    + $"({_downloadedAssets}/{totalAssets}) "
-                    + "              \r"
+            _downloadedBytes = 0;
+            _downloadedAssets = 0;
+            _failedAssets.Clear();
+
+            var totalBytesString = Utils.GetHumanReadableFilesize(
+                currentDownloadedAssets.Sum(asset => asset.Size),
+                6
             );
 
-            await Task.Delay(10);
-        }
+            var totalAssets = currentDownloadedAssets.Count;
+
+            await Console.Out.WriteLineAsync("Starting asset download threads.");
+
+            var tasks = currentDownloadedAssets
+                .AsParallel()
+                .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
+                .Select(
+                    asset =>
+                        DownloadFile(
+                            asset,
+                            _downloadFolder + asset.DownloadPath
+                        )
+                )
+                .ToList();
+
+            await Console.Out.WriteLineAsync("Asset download started.");
+
+            while (_downloadedAssets + _failedAssets.Count != totalAssets)
+            {
+                await Console.Out.WriteAsync(
+                    " - Download progress: "
+                    + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
+                    + $"({_downloadedAssets}/{totalAssets}) Assets, "
+                    + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
+                    + $"({stopwatch.Elapsed:hh\\:mm\\:ss})"
+                    + "              \r"
+                );
+
+                await Task.Delay(10);
+            }
+
+            if (!_failedAssets.IsEmpty)
+            {
+                await Console.Out.WriteLineAsync("\nSome assets failed to download. Retrying them.");
+                currentDownloadedAssets = _failedAssets.ToList();
+            }
+
+        } while (!_failedAssets.IsEmpty);
 
         stopwatch.Stop();
         await Console.Out.WriteLineAsync(
-            $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed}"
+            $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}"
         );
     }
 
@@ -109,7 +127,7 @@ public class Downloader
         return actualHash.SequenceEqual(expectedHash);
     }
 
-    private async Task DownloadFile(string downloadPath, string filePath, byte[] expectedHash)
+    private async Task DownloadFile(AssetInfo asset, string filePath)
     {
         await _downloadSemaphore.WaitAsync();
 
@@ -117,8 +135,8 @@ public class Downloader
         {
             try
             {
-                var fileData = await _downloadClient.GetByteArrayAsync(downloadPath);
-                if (VerifyFileHash(fileData, expectedHash))
+                var fileData = await _downloadClient.GetByteArrayAsync(asset.DownloadPath);
+                if (VerifyFileHash(fileData, asset.HashBytes))
                 {
                     Interlocked.Add(ref _downloadedBytes, fileData.LongLength);
                     _downloadSemaphore.Release(); // File I/O is slow so we don't wait for it
@@ -129,14 +147,19 @@ public class Downloader
                 }
 
                 await Console.Out.WriteLineAsync(
-                    $"File {downloadPath} was downloaded but did not have the proper hash, retrying."
+                    $"File {asset.DownloadPath} was downloaded but did not have the proper hash, retrying."
                 );
             }
             catch (Exception ex)
             {
                 await Console.Out.WriteLineAsync(
-                    $"Failed to download file {downloadPath}. Exception: {ex.GetType().Name} -- {ex.Message}"
+                    $"Failed to download file {asset.DownloadPath}. This download will be retried later."
                 );
+#if DEBUG // Runs if the app is built in 'Debug' mode
+                await Console.Out.WriteLineAsync($"{ex}");
+#endif
+
+                _failedAssets.Add(asset);
                 _downloadSemaphore.Release();
                 return;
             }
