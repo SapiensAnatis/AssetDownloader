@@ -95,15 +95,7 @@ public class Downloader
 
             while (_downloadedAssets + _failedAssets.Count != totalAssets)
             {
-                await Console.Out.WriteAsync(
-                    " - Download progress: "
-                        + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
-                        + $"({_downloadedAssets}/{totalAssets}) Assets, "
-                        + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
-                        + $"({stopwatch.Elapsed:hh\\:mm\\:ss})"
-                        + "              \r"
-                );
-
+                await this.WriteProgress(totalBytesString, totalAssets, stopwatch.Elapsed);
                 await Task.Delay(10);
             }
 
@@ -122,11 +114,28 @@ public class Downloader
                     "Concurrency has been set to one thread for the remaining downloads."
                 );
             }
+            else
+            {
+                // On exiting loop, update progress so it does not imply files have been missed
+                await this.WriteProgress(totalBytesString, totalAssets, stopwatch.Elapsed);
+            }
         } while (!_failedAssets.IsEmpty);
 
         stopwatch.Stop();
         await Console.Out.WriteLineAsync(
             $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}"
+        );
+    }
+
+    private async Task WriteProgress(string totalBytesString, int totalAssets, TimeSpan elapsed)
+    {
+        await Console.Out.WriteAsync(
+            " - Download progress: "
+                + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
+                + $"({_downloadedAssets}/{totalAssets}) Assets, "
+                + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
+                + $"({elapsed:hh\\:mm\\:ss})"
+                + "              \r"
         );
     }
 
