@@ -15,11 +15,11 @@ public class Downloader
     private long _downloadedBytes;
     private long _downloadedAssets;
 
-    private readonly ISet<AssetInfo> _assets;
+    private readonly IEnumerable<AssetInfo> _assets;
     private readonly ConcurrentBag<AssetInfo> _failedAssets;
 
     public Downloader(
-        ISet<AssetInfo> assets,
+        IEnumerable<AssetInfo> assets,
         string downloadFolder,
         string platform,
         int maxConcurrent = 16
@@ -52,8 +52,13 @@ public class Downloader
             .AsParallel()
             .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
             .Where(
-                asset => !File.Exists(_downloadFolder + asset.DownloadPath) ||
-                         !VerifyFileHash(File.ReadAllBytes(_downloadFolder + asset.DownloadPath), asset.HashBytes))
+                asset =>
+                    !File.Exists(_downloadFolder + asset.DownloadPath)
+                    || !VerifyFileHash(
+                        File.ReadAllBytes(_downloadFolder + asset.DownloadPath),
+                        asset.HashBytes
+                    )
+            )
             .ToList();
 
         await Console.Out.WriteLineAsync("Creating directories.");
@@ -82,13 +87,7 @@ public class Downloader
             var tasks = currentDownloadedAssets
                 .AsParallel()
                 .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
-                .Select(
-                    asset =>
-                        DownloadFile(
-                            asset,
-                            _downloadFolder + asset.DownloadPath
-                        )
-                )
+                .Select(asset => DownloadFile(asset, _downloadFolder + asset.DownloadPath))
                 .ToList();
 
             await Console.Out.WriteLineAsync("Asset download started.");
@@ -97,11 +96,11 @@ public class Downloader
             {
                 await Console.Out.WriteAsync(
                     " - Download progress: "
-                    + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
-                    + $"({_downloadedAssets}/{totalAssets}) Assets, "
-                    + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
-                    + $"({stopwatch.Elapsed:hh\\:mm\\:ss})"
-                    + "              \r"
+                        + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
+                        + $"({_downloadedAssets}/{totalAssets}) Assets, "
+                        + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
+                        + $"({stopwatch.Elapsed:hh\\:mm\\:ss})"
+                        + "              \r"
                 );
 
                 await Task.Delay(10);
@@ -109,10 +108,11 @@ public class Downloader
 
             if (!_failedAssets.IsEmpty)
             {
-                await Console.Out.WriteLineAsync("\nSome assets failed to download. Retrying them.");
+                await Console.Out.WriteLineAsync(
+                    "\nSome assets failed to download. Retrying them."
+                );
                 currentDownloadedAssets = _failedAssets.ToList();
             }
-
         } while (!_failedAssets.IsEmpty);
 
         stopwatch.Stop();

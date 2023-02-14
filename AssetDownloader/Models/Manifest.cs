@@ -4,7 +4,8 @@ public class Manifest
 {
     public List<AssetCategory> Categories { get; }
     public List<AssetInfo> RawAssets { get; }
-    public IEnumerable<AssetInfo> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
+    public IEnumerable<AssetInfo> AllAssets =>
+        Categories.SelectMany(c => c.Assets).Concat(RawAssets);
 
     public Manifest(List<AssetCategory> categories, List<AssetInfo> rawAssets)
     {
@@ -46,11 +47,11 @@ public class AssetInfo
 
     public override bool Equals(object? obj)
     {
-        return obj is AssetInfo asset && Hash == asset.Hash;
+        return obj is AssetInfo asset && this.Name == asset.Name;
     }
 
     public override int GetHashCode()
     {
-        return Hash.GetHashCode();
+        return this.Name.GetHashCode();
     }
 }
