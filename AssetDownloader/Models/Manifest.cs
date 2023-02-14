@@ -44,14 +44,4 @@ public class AssetInfo
         HashBytes = Base32.ToBytes(hash);
         DownloadPath = $"{HashId}/{hash}";
     }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is AssetInfo asset && this.Name == asset.Name;
-    }
-
-    public override int GetHashCode()
-    {
-        return this.Name.GetHashCode();
-    }
 }

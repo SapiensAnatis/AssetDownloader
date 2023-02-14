@@ -66,35 +66,30 @@ var manifestPath = Path.Combine(
     parsedArgs.PlatformName
 );
 
-var manifestDirs = parsedArgs.SkipOldAssets
-    ? new List<DirectoryInfo>
-    {
-        new(
-            Path.Join(
-                manifestPath,
-                parsedArgs.PlatformName == Constants.Android
-                    ? Constants.LatestAndroidManifestName
-                    : Constants.LatestIosManifestName
-            )
-        )
-    }
-    : new DirectoryInfo(manifestPath).GetDirectories().OrderByDescending(x => x.Name).ToList();
+var manifestDirs = new DirectoryInfo(manifestPath)
+    .GetDirectories()
+    .OrderByDescending(x => x.Name)
+    .ToList();
+
+IEqualityComparer<AssetInfo> equalityComparer = parsedArgs.SkipOldAssets
+    ? new FilenameEqualityComparer()
+    : new HashEqualityComparer();
 
 await Console.Out.WriteLineAsync("Starting manifest parsing.");
 
 // Collect all hashes
 Dictionary<string, HashSet<AssetInfo>> localeHashmaps =
-    new() { { Constants.JpManifest, new HashSet<AssetInfo>() } };
+    new() { { Constants.JpManifest, new HashSet<AssetInfo>(equalityComparer) } };
 
 // Separate hashmaps per localisation to avoid overwriting across languages
 if (parsedArgs.DownloadEn)
-    localeHashmaps.Add(Constants.EnManifest, new HashSet<AssetInfo>());
+    localeHashmaps.Add(Constants.EnManifest, new HashSet<AssetInfo>(equalityComparer));
 if (parsedArgs.DownloadEu)
-    localeHashmaps.Add(Constants.EuManifest, new HashSet<AssetInfo>());
+    localeHashmaps.Add(Constants.EuManifest, new HashSet<AssetInfo>(equalityComparer));
 if (parsedArgs.DownloadCn)
-    localeHashmaps.Add(Constants.CnManifest, new HashSet<AssetInfo>());
+    localeHashmaps.Add(Constants.CnManifest, new HashSet<AssetInfo>(equalityComparer));
 if (parsedArgs.DownloadTw)
-    localeHashmaps.Add(Constants.TwManifest, new HashSet<AssetInfo>());
+    localeHashmaps.Add(Constants.TwManifest, new HashSet<AssetInfo>(equalityComparer));
 
 for (int i = 0; i < manifestDirs.Count; i++)
 {
