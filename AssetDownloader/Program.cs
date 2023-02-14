@@ -14,7 +14,7 @@ AppDomain.CurrentDomain.UnhandledException += (_, args) =>
 Arguments parsedArgs = Utils.VerifyArguments(args);
 if (!parsedArgs.IsValid)
 {
-    Console.WriteLine("Detected invalid command-line arguments. Starting interactive mode...");
+    Console.WriteLine("Could not read command-line arguments. Starting interactive mode...");
     parsedArgs = Utils.InteractiveArgs();
 }
 
@@ -42,6 +42,10 @@ if (parsedArgs is { SkipOldAssets: false, PlatformName: Constants.Ios })
 
 Console.WriteLine($"You have chosen the following options:{Environment.NewLine}");
 Console.WriteLine($"{parsedArgs}{Environment.NewLine}");
+Console.WriteLine(
+    "Press Enter to begin the download, or restart the program if you wish to choose different options."
+);
+Console.ReadLine();
 
 // Download and unzip dl-datamine repository
 if (!Directory.Exists(Constants.ClonedRepoFolder))

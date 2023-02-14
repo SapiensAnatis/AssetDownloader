@@ -103,7 +103,8 @@ public static class Utils
         Arguments result = new();
 
         result.SkipOldAssets = InputPromptBool(
-            "Skip old assets? This will reduce the size of the download by only keeping the newest version of each files, skipping e.g. pre-2.0 models"
+            "Do you want to only download the most recent version of each asset (cuts download from ~50GB to ~15GB)?"
+                + "\nThis option is not recommended unless you have no space for the full download. It may make it difficult to access old event data."
         );
 
         string outputFolder = InputPromptString(
