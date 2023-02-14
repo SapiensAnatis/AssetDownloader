@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO.Compression;
 using System.Net.Http.Handlers;
 using AssetDownloader.Models;
@@ -104,10 +103,11 @@ public static class Utils
         Arguments result = new();
 
         result.SkipOldAssets = InputPromptBool(
-            "Skip old assets? This will reduce the size of the download, but you will not have files for older events."
+            "Skip old assets? This will reduce the size of the download by only keeping the newest version of each files, skipping e.g. pre-2.0 models"
         );
+
         string outputFolder = InputPromptString(
-            "Filepath for download result: (default: DownloadOutput)"
+            $"Filepath for download result: (leave blank for ./DownloadOutput)"
         );
 
         if (string.IsNullOrWhiteSpace(outputFolder))
@@ -115,10 +115,13 @@ public static class Utils
 
         result.OutputFolder = outputFolder;
 
-        result.MaxConcurrent = InputPromptInt("Maximum concurrent downloads (default: 16)", 16);
+        result.MaxConcurrent = InputPromptInt(
+            "Maximum concurrent downloads (leave blank for 16)",
+            16
+        );
 
         string platform = InputPromptString(
-            "Target asset platform? (allowed values: 'iOS', 'Android', default: Android)"
+            "Target asset platform? (allowed values: 'iOS', 'Android', leave blank for Android)"
         );
         result.PlatformName = platform.ToLower() switch
         {
