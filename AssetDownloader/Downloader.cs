@@ -33,6 +33,7 @@ public class Downloader
 
         _downloadClient = new HttpClient();
         _downloadClient.BaseAddress = new Uri(Constants.BaseUrl + platform + '/');
+        _downloadClient.Timeout = TimeSpan.FromMinutes(5);
         _downloadClient.DefaultRequestHeaders.TryAddWithoutValidation(
             "User-Agent",
             "UnityPlayer/2019.4.31f1 (UnityWebRequest/1.0, libcurl/7.75.0-DEV)"
@@ -116,7 +117,10 @@ public class Downloader
                 // Known issue: if only a few large files remain, then the downloader may fail in a loop as it
                 // is unable to download them sequentially within the timeout window.
                 _downloadSemaphore = new SemaphoreSlim(1, 1);
-                _downloadClient.Timeout *= 2;
+
+                await Console.Out.WriteLineAsync(
+                    "Concurrency has been set to one thread for the remaining downloads."
+                );
             }
         } while (!_failedAssets.IsEmpty);
 
@@ -158,9 +162,8 @@ public class Downloader
             catch (Exception ex)
             {
                 await Console.Out.WriteLineAsync(
-                    $"Failed to download file {asset.DownloadPath}. This download will be retried later."
+                    $"Failed to download file {asset.DownloadPath} (reason: {ex.GetType().Name}). This download will be retried later."
                 );
-                await Console.Out.WriteLineAsync($"(Cause: {ex.GetType().Name})");
 #if DEBUG // Runs if the app is built in 'Debug' mode
                 await Console.Out.WriteLineAsync($"{ex}");
 #endif
