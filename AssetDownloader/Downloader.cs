@@ -7,7 +7,7 @@ namespace AssetDownloader;
 
 public class Downloader
 {
-    private readonly SemaphoreSlim _downloadSemaphore;
+    private SemaphoreSlim _downloadSemaphore;
 
     private readonly string _downloadFolder;
     private readonly HttpClient _downloadClient;
@@ -45,7 +45,7 @@ public class Downloader
     public async Task DownloadFiles()
     {
         await Console.Out.WriteLineAsync(
-            "Filtering out unneeded assets. If the script has already run, this may take a long time."
+            "Filtering out unneeded assets. If the script has already run, this will take a long time."
         );
 
         var currentDownloadedAssets = _assets
@@ -112,6 +112,11 @@ public class Downloader
                     "\nSome assets failed to download. Retrying them."
                 );
                 currentDownloadedAssets = _failedAssets.ToList();
+
+                // Known issue: if only a few large files remain, then the downloader may fail in a loop as it
+                // is unable to download them sequentially within the timeout window.
+                _downloadSemaphore = new SemaphoreSlim(1, 1);
+                _downloadClient.Timeout *= 2;
             }
         } while (!_failedAssets.IsEmpty);
 
@@ -155,6 +160,7 @@ public class Downloader
                 await Console.Out.WriteLineAsync(
                     $"Failed to download file {asset.DownloadPath}. This download will be retried later."
                 );
+                await Console.Out.WriteLineAsync($"(Cause: {ex.GetType().Name})");
 #if DEBUG // Runs if the app is built in 'Debug' mode
                 await Console.Out.WriteLineAsync($"{ex}");
 #endif
