@@ -34,7 +34,7 @@ public class Arguments
             Output folder: {Path.Join(Directory.GetCurrentDirectory(), this.OutputFolder)}
             Skip old assets: {this.SkipOldAssets}
             Download English: {this.DownloadEn}
-            Download EU English: {this.DownloadEu}
+            Download international English: {this.DownloadEu}
             Download Chinese: {this.DownloadCn}
             Download Taiwanese: {this.DownloadTw}
             Maximum concurrent downloads: {this.MaxConcurrent}

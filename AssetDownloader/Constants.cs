@@ -31,4 +31,10 @@ public static class Constants
             "-p <platform>" or "--platform <platform>": Sets the version of assets to download.
                 Valid options: Android, iOS (default: Android)
         """;
+
+    public const string JpManifest = "assetbundle.manifest.json";
+    public const string EuManifest = "assetbundle.en_eu.manifest.json";
+    public const string EnManifest = "assetbundle.en_us.manifest.json";
+    public const string CnManifest = "assetbundle.zh_cn.manifest.json";
+    public const string TwManifest = "assetbundle.zh_tw.manifest.json";
 }

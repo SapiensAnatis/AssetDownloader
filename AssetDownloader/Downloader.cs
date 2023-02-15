@@ -7,7 +7,7 @@ namespace AssetDownloader;
 
 public class Downloader
 {
-    private readonly SemaphoreSlim _downloadSemaphore;
+    private SemaphoreSlim _downloadSemaphore;
 
     private readonly string _downloadFolder;
     private readonly HttpClient _downloadClient;
@@ -15,11 +15,11 @@ public class Downloader
     private long _downloadedBytes;
     private long _downloadedAssets;
 
-    private readonly ISet<AssetInfo> _assets;
+    private readonly IEnumerable<AssetInfo> _assets;
     private readonly ConcurrentBag<AssetInfo> _failedAssets;
 
     public Downloader(
-        ISet<AssetInfo> assets,
+        IEnumerable<AssetInfo> assets,
         string downloadFolder,
         string platform,
         int maxConcurrent = 16
@@ -33,6 +33,7 @@ public class Downloader
 
         _downloadClient = new HttpClient();
         _downloadClient.BaseAddress = new Uri(Constants.BaseUrl + platform + '/');
+        _downloadClient.Timeout = TimeSpan.FromMinutes(5);
         _downloadClient.DefaultRequestHeaders.TryAddWithoutValidation(
             "User-Agent",
             "UnityPlayer/2019.4.31f1 (UnityWebRequest/1.0, libcurl/7.75.0-DEV)"
@@ -45,15 +46,20 @@ public class Downloader
     public async Task DownloadFiles()
     {
         await Console.Out.WriteLineAsync(
-            "Filtering out unneeded assets. If the script has already run, this may take a long time."
+            "Filtering out unneeded assets. If the script has already run, this will take a long time."
         );
 
         var currentDownloadedAssets = _assets
             .AsParallel()
             .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
             .Where(
-                asset => !File.Exists(_downloadFolder + asset.DownloadPath) ||
-                         !VerifyFileHash(File.ReadAllBytes(_downloadFolder + asset.DownloadPath), asset.HashBytes))
+                asset =>
+                    !File.Exists(_downloadFolder + asset.DownloadPath)
+                    || !VerifyFileHash(
+                        File.ReadAllBytes(_downloadFolder + asset.DownloadPath),
+                        asset.HashBytes
+                    )
+            )
             .ToList();
 
         await Console.Out.WriteLineAsync("Creating directories.");
@@ -82,42 +88,54 @@ public class Downloader
             var tasks = currentDownloadedAssets
                 .AsParallel()
                 .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
-                .Select(
-                    asset =>
-                        DownloadFile(
-                            asset,
-                            _downloadFolder + asset.DownloadPath
-                        )
-                )
+                .Select(asset => DownloadFile(asset, _downloadFolder + asset.DownloadPath))
                 .ToList();
 
             await Console.Out.WriteLineAsync("Asset download started.");
 
             while (_downloadedAssets + _failedAssets.Count != totalAssets)
             {
-                await Console.Out.WriteAsync(
-                    " - Download progress: "
-                    + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
-                    + $"({_downloadedAssets}/{totalAssets}) Assets, "
-                    + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
-                    + $"({stopwatch.Elapsed:hh\\:mm\\:ss})"
-                    + "              \r"
-                );
-
+                await this.WriteProgress(totalBytesString, totalAssets, stopwatch.Elapsed);
                 await Task.Delay(10);
             }
 
             if (!_failedAssets.IsEmpty)
             {
-                await Console.Out.WriteLineAsync("\nSome assets failed to download. Retrying them.");
+                await Console.Out.WriteLineAsync(
+                    "\nSome assets failed to download. Retrying them."
+                );
                 currentDownloadedAssets = _failedAssets.ToList();
-            }
 
+                // Known issue: if only a few large files remain, then the downloader may fail in a loop as it
+                // is unable to download them sequentially within the timeout window.
+                _downloadSemaphore = new SemaphoreSlim(1, 1);
+
+                await Console.Out.WriteLineAsync(
+                    "Concurrency has been set to one thread for the remaining downloads."
+                );
+            }
+            else
+            {
+                // On exiting loop, update progress so it does not imply files have been missed
+                await this.WriteProgress(totalBytesString, totalAssets, stopwatch.Elapsed);
+            }
         } while (!_failedAssets.IsEmpty);
 
         stopwatch.Stop();
         await Console.Out.WriteLineAsync(
             $"\nAsset download completed. Time elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}"
+        );
+    }
+
+    private async Task WriteProgress(string totalBytesString, int totalAssets, TimeSpan elapsed)
+    {
+        await Console.Out.WriteAsync(
+            " - Download progress: "
+                + $"{Utils.GetHumanReadableFilesize(_downloadedBytes, 6)}/{totalBytesString} MB, "
+                + $"({_downloadedAssets}/{totalAssets}) Assets, "
+                + $"{Utils.GetFormattedPercent(_downloadedAssets, totalAssets)} "
+                + $"({elapsed:hh\\:mm\\:ss})"
+                + "              \r"
         );
     }
 
@@ -153,7 +171,7 @@ public class Downloader
             catch (Exception ex)
             {
                 await Console.Out.WriteLineAsync(
-                    $"Failed to download file {asset.DownloadPath}. This download will be retried later."
+                    $"Failed to download file {asset.DownloadPath} (reason: {ex.GetType().Name}). This download will be retried later."
                 );
 #if DEBUG // Runs if the app is built in 'Debug' mode
                 await Console.Out.WriteLineAsync($"{ex}");

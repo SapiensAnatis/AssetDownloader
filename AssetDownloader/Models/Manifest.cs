@@ -4,7 +4,8 @@ public class Manifest
 {
     public List<AssetCategory> Categories { get; }
     public List<AssetInfo> RawAssets { get; }
-    public IEnumerable<AssetInfo> AllAssets => Categories.SelectMany(c => c.Assets).Concat(RawAssets);
+    public IEnumerable<AssetInfo> AllAssets =>
+        Categories.SelectMany(c => c.Assets).Concat(RawAssets);
 
     public Manifest(List<AssetCategory> categories, List<AssetInfo> rawAssets)
     {
@@ -42,15 +43,5 @@ public class AssetInfo
         HashId = hash[..2];
         HashBytes = Base32.ToBytes(hash);
         DownloadPath = $"{HashId}/{hash}";
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is AssetInfo asset && Hash == asset.Hash;
-    }
-
-    public override int GetHashCode()
-    {
-        return Hash.GetHashCode();
     }
 }
