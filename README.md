@@ -24,8 +24,9 @@ The expected download size depends on the options you choose. Broadly speaking, 
 | Localisations       | Skipping old assets | With iOS | Size |
 |---------------------|---------------------|----------|------|
 | en_us, en_eu        | No                  | No       | 43GB |
+| en_us               | Yes                 | Yes      | 37GB |
+| en_us, en_eu, zh_cn | Yes                 | No       | 19GB |  
 | en_us               | Yes                 | No       | 18GB |
-| en_us, en_eu, zh_cn | Yes                 | No       | 19GB |            
 
 ### FAQ
 
