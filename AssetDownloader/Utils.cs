@@ -101,11 +101,11 @@ public static class Utils
         );
 
         string outputFolder = InputPromptString(
-            $"Filepath for download result: (leave blank for ./DownloadOutput)"
+            $"Filepath for download result: (leave blank for ./DownloaderOutput)"
         );
 
         if (string.IsNullOrWhiteSpace(outputFolder))
-            outputFolder = "DownloadOutput";
+            outputFolder = "DownloaderOutput";
 
         result.OutputFolder = outputFolder;
 

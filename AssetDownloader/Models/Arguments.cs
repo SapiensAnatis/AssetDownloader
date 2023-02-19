@@ -4,7 +4,7 @@ namespace AssetDownloader.Models;
 
 public class Arguments
 {
-    public string OutputFolder { get; set; } = "DownloadOutput";
+    public string OutputFolder { get; set; } = "DownloaderOutput";
 
     public bool SkipOldAssets { get; set; } = false;
 
