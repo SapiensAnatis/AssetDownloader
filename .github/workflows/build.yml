@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         dotnet-version: [ '7.0.x' ]
-        rid: ['win-x64', 'win-x86', 'linux-x64', 'osx-x64', 'osx-arm64']
+        rid: ['win-x64', 'win-x86', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64']
 
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
         run: dotnet restore -r ${{ matrix.rid }}
       - name: Publish
         run: | 
-           dotnet publish AssetDownloader/AssetDownloader.csproj -c Release --no-restore -o ./${{ matrix.rid }} -r ${{ matrix.rid }} --no-self-contained
+           dotnet publish AssetDownloader/AssetDownloader.csproj -c Release --no-restore -o ./${{ matrix.rid }} -r ${{ matrix.rid }}
            zip -r ${{ matrix.rid }}.zip ./${{ matrix.rid }}/*
       - name: Upload artifacts
         uses: actions/upload-artifact@v3

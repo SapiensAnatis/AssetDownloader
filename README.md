@@ -1,9 +1,5 @@
 ﻿# Dragalia Lost Asset Downloader
 
-## Requirements
-
-- [.NET 7 Runtime](https://dotnet.microsoft.com/en-us/download) installed
-
 ## Installation
 
 Download from the [releases page](https://github.com/SapiensAnatis/AssetDownloader/releases/latest)
