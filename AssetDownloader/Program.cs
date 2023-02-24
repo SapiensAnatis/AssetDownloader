@@ -1,6 +1,6 @@
-﻿using AssetDownloader.Models;
+﻿using System.Text.Json;
+using AssetDownloader.Models;
 using AssetDownloader;
-using Newtonsoft.Json;
 
 AppDomain.CurrentDomain.UnhandledException += (_, args) =>
 {
@@ -92,9 +92,13 @@ List<AssetInfo> ParseManifests(string platform)
         foreach ((string filename, HashSet<AssetInfo> assetCollection) in localeHashmaps)
         {
             string path = Path.Join(currentManifestDir.FullName, filename);
-            Manifest m =
-                JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
-                ?? throw new NullReferenceException("JSON deserialization failure");
+            Manifest m = (Manifest)(
+                JsonSerializer.Deserialize(
+                    File.ReadAllText(path),
+                    typeof(Manifest),
+                    AssetJsonContext.Default
+                ) ?? throw new NullReferenceException("JSON deserialization failure")
+            );
 
             assetCollection.UnionWith(m.AllAssets);
         }
