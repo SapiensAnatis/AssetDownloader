@@ -1,6 +1,6 @@
-﻿using AssetDownloader.Models;
+﻿using System.Text.Json;
+using AssetDownloader.Models;
 using AssetDownloader;
-using Newtonsoft.Json;
 
 AppDomain.CurrentDomain.UnhandledException += (_, args) =>
 {
@@ -29,17 +29,6 @@ if (!parsedArgs.IsValid)
     Utils.FriendlyExit();
 }
 
-if (parsedArgs is { SkipOldAssets: false, PlatformName: Constants.Ios })
-{
-    Console.WriteLine(
-        "Error: Cannot download all iOS assets as only the latest manifest has been preserved."
-    );
-    Console.WriteLine(
-        "Please use the --skip-old-assets flag or select 'n' to the first question to acknowledge this issue."
-    );
-    Utils.FriendlyExit();
-}
-
 Console.WriteLine($"You have chosen the following options:{Environment.NewLine}");
 Console.WriteLine($"{parsedArgs}{Environment.NewLine}");
 Console.WriteLine(
@@ -58,73 +47,138 @@ else
     await Console.Out.WriteLineAsync("Found existing manifests. Skipping download.");
 }
 
-await Console.Out.WriteLineAsync("\nParsing manifests...");
-
-var manifestPath = Path.Combine(
-    Constants.ClonedRepoFolder,
-    "DragaliaManifests-master",
-    parsedArgs.PlatformName
-);
-
-var manifestDirs = new DirectoryInfo(manifestPath)
-    .GetDirectories()
-    .OrderByDescending(x => x.Name)
-    .ToList();
-
 IEqualityComparer<AssetInfo> equalityComparer = parsedArgs.SkipOldAssets
     ? new FilenameEqualityComparer()
     : new HashEqualityComparer();
 
-await Console.Out.WriteLineAsync("Starting manifest parsing.");
-
-// Collect all hashes
-Dictionary<string, HashSet<AssetInfo>> localeHashmaps =
-    new() { { Constants.JpManifest, new HashSet<AssetInfo>(equalityComparer) } };
-
-// Separate hashmaps per localisation to avoid overwriting across languages
-if (parsedArgs.DownloadEn)
-    localeHashmaps.Add(Constants.EnManifest, new HashSet<AssetInfo>(equalityComparer));
-if (parsedArgs.DownloadEu)
-    localeHashmaps.Add(Constants.EuManifest, new HashSet<AssetInfo>(equalityComparer));
-if (parsedArgs.DownloadCn)
-    localeHashmaps.Add(Constants.CnManifest, new HashSet<AssetInfo>(equalityComparer));
-if (parsedArgs.DownloadTw)
-    localeHashmaps.Add(Constants.TwManifest, new HashSet<AssetInfo>(equalityComparer));
-
-for (int i = 0; i < manifestDirs.Count; i++)
+List<AssetInfo> ParseManifests(string platform)
 {
-    var currentManifestDir = manifestDirs.ElementAt(i);
-    var manifestName = currentManifestDir.Name.Split("_")[1];
+    Console.WriteLine("\nParsing manifests...");
 
-    await Console.Out.WriteAsync(
-        $" - Parsing manifest {manifestName} ({i + 1}/{manifestDirs.Count})             \r"
+    var manifestPath = Path.Combine(
+        Constants.ClonedRepoFolder,
+        "DragaliaManifests-master",
+        platform
     );
 
-    foreach ((string filename, HashSet<AssetInfo> assetCollection) in localeHashmaps)
-    {
-        string path = Path.Join(currentManifestDir.FullName, filename);
-        Manifest m =
-            JsonConvert.DeserializeObject<Manifest>(File.ReadAllText(path))
-            ?? throw new NullReferenceException("JSON deserialization failure");
+    var manifestDirs = new DirectoryInfo(manifestPath)
+        .GetDirectories()
+        .OrderByDescending(x => x.Name)
+        .ToList();
 
-        assetCollection.UnionWith(m.AllAssets);
+    // Collect all hashes
+    Dictionary<string, HashSet<AssetInfo>> localeHashmaps =
+        new() { { Constants.JpManifest, new HashSet<AssetInfo>(equalityComparer) } };
+
+    // Separate hashmaps per localisation to avoid overwriting across languages
+    if (parsedArgs.DownloadEn)
+        localeHashmaps.Add(Constants.EnManifest, new HashSet<AssetInfo>(equalityComparer));
+    if (parsedArgs.DownloadEu)
+        localeHashmaps.Add(Constants.EuManifest, new HashSet<AssetInfo>(equalityComparer));
+    if (parsedArgs.DownloadCn)
+        localeHashmaps.Add(Constants.CnManifest, new HashSet<AssetInfo>(equalityComparer));
+    if (parsedArgs.DownloadTw)
+        localeHashmaps.Add(Constants.TwManifest, new HashSet<AssetInfo>(equalityComparer));
+
+    for (int i = 0; i < manifestDirs.Count; i++)
+    {
+        var currentManifestDir = manifestDirs.ElementAt(i);
+        var manifestName = currentManifestDir.Name.Split("_")[1];
+
+        Console.Write(
+            $" - Parsing manifest {manifestName} ({i + 1}/{manifestDirs.Count})             \r"
+        );
+
+        foreach ((string filename, HashSet<AssetInfo> assetCollection) in localeHashmaps)
+        {
+            string path = Path.Join(currentManifestDir.FullName, filename);
+            Manifest m = (Manifest)(
+                JsonSerializer.Deserialize(
+                    File.ReadAllText(path),
+                    typeof(Manifest),
+                    AssetJsonContext.Default
+                ) ?? throw new NullReferenceException("JSON deserialization failure")
+            );
+
+            assetCollection.UnionWith(m.AllAssets);
+        }
     }
+
+    // Combine disparate hashmaps
+    List<AssetInfo> finalAssets = new();
+    foreach ((string _, HashSet<AssetInfo> assetCollection) in localeHashmaps)
+        finalAssets.AddRange(assetCollection);
+
+    Console.WriteLine("\nFinished manifest parsing.\n");
+
+    return finalAssets;
 }
 
-// Combine disparate hashmaps
-List<AssetInfo> finalAssets = new();
-foreach ((string _, HashSet<AssetInfo> assetCollection) in localeHashmaps)
-    finalAssets.AddRange(assetCollection);
-
-await Console.Out.WriteLineAsync("\nFinished manifest parsing.\n");
+var androidFinalAssets = ParseManifests(Constants.Android);
 
 var downloader = new Downloader(
-    finalAssets,
+    androidFinalAssets,
     parsedArgs.OutputFolder,
-    parsedArgs.PlatformName,
+    Constants.Android,
     parsedArgs.MaxConcurrent
 );
 await downloader.DownloadFiles();
+
+if (parsedArgs.DownloadIos)
+{
+    var hashEqualityComparer = new HashEqualityComparer();
+
+    Console.WriteLine("Commencing iOS download...");
+
+    var iosFinalAssets = ParseManifests(Constants.Ios);
+    var sharedAssets = androidFinalAssets.Intersect(iosFinalAssets, hashEqualityComparer).ToList();
+
+    long copyFilesize = sharedAssets.Sum(x => x.Size);
+    string copyFilesizeStr = $"{Utils.GetHumanReadableFilesize(copyFilesize, 6)} MB";
+    long copiedFilesize = 0;
+    int copyCount = sharedAssets.Count;
+
+    string androidFolder = Path.Join(parsedArgs.OutputFolder, Constants.Android);
+    string iosFolder = Path.Join(parsedArgs.OutputFolder, Constants.Ios);
+
+    Console.WriteLine(
+        $"Copying assets shared with existing Android download... (to copy: {Utils.GetHumanReadableFilesize(copyFilesize, 6)} MB)"
+    );
+
+    foreach ((AssetInfo asset, int index) in sharedAssets.Select((value, index) => (value, index)))
+    {
+        Directory.CreateDirectory(Path.Join(iosFolder, asset.HashId));
+
+        if (!Path.Exists(Path.Join(iosFolder, asset.DownloadPath)))
+        {
+            File.Copy(
+                Path.Join(androidFolder, asset.DownloadPath),
+                Path.Join(iosFolder, asset.DownloadPath)
+            );
+        }
+
+        copiedFilesize += asset.Size;
+
+        string countProgress =
+            $"{index}/{copyCount} assets ({Utils.GetFormattedPercent(index, copyCount)})";
+        string sizeProgress =
+            $"{Utils.GetHumanReadableFilesize(copiedFilesize, 6)}/{copyFilesizeStr}";
+
+        Console.Write($"Copying file {asset.Hash} {sizeProgress}, {countProgress}            \r");
+    }
+
+    Console.WriteLine();
+
+    iosFinalAssets = iosFinalAssets.Except(sharedAssets, hashEqualityComparer).ToList();
+
+    downloader = new Downloader(
+        iosFinalAssets,
+        parsedArgs.OutputFolder,
+        Constants.Ios,
+        parsedArgs.MaxConcurrent
+    );
+    await downloader.DownloadFiles();
+}
 
 await Console.Out.WriteLineAsync("Program finished.");
 Utils.FriendlyExit();

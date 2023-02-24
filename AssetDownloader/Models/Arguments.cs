@@ -18,7 +18,7 @@ public class Arguments
 
     public int MaxConcurrent { get; set; } = 16;
 
-    public string PlatformName { get; set; } = Constants.Android;
+    public bool DownloadIos { get; set; } = false;
 
     private bool isValid = true;
 
@@ -38,7 +38,7 @@ public class Arguments
             Download Chinese: {this.DownloadCn}
             Download Taiwanese: {this.DownloadTw}
             Maximum concurrent downloads: {this.MaxConcurrent}
-            Asset platform: {this.PlatformName}
+            Also download iOS: {this.DownloadIos}
             """;
     }
 }

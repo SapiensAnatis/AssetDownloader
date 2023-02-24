@@ -28,7 +28,7 @@ public class Downloader
         _assets = assets;
         _failedAssets = new ConcurrentBag<AssetInfo>();
 
-        _downloadFolder = Path.GetFullPath(downloadFolder) + Path.DirectorySeparatorChar;
+        _downloadFolder = Path.Join(Path.GetFullPath(downloadFolder), platform);
         _downloadSemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
 
         _downloadClient = new HttpClient();
@@ -54,9 +54,9 @@ public class Downloader
             .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
             .Where(
                 asset =>
-                    !File.Exists(_downloadFolder + asset.DownloadPath)
+                    !File.Exists(Path.Join(_downloadFolder, asset.DownloadPath))
                     || !VerifyFileHash(
-                        File.ReadAllBytes(_downloadFolder + asset.DownloadPath),
+                        File.ReadAllBytes(Path.Join(_downloadFolder, asset.DownloadPath)),
                         asset.HashBytes
                     )
             )
@@ -65,7 +65,7 @@ public class Downloader
         await Console.Out.WriteLineAsync("Creating directories.");
 
         foreach (var hashPrefix in currentDownloadedAssets.Select(asset => asset.HashId).Distinct())
-            Directory.CreateDirectory(_downloadFolder + hashPrefix);
+            Directory.CreateDirectory(Path.Join(_downloadFolder, hashPrefix));
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -88,7 +88,9 @@ public class Downloader
             var tasks = currentDownloadedAssets
                 .AsParallel()
                 .WithDegreeOfParallelism(_downloadSemaphore.CurrentCount)
-                .Select(asset => DownloadFile(asset, _downloadFolder + asset.DownloadPath))
+                .Select(
+                    asset => DownloadFile(asset, Path.Join(_downloadFolder, asset.DownloadPath))
+                )
                 .ToList();
 
             await Console.Out.WriteLineAsync("Asset download started.");

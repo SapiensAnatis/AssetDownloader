@@ -26,7 +26,7 @@ public static class Constants
             "-eu" or "--download-eu": Adds EN_EU and EN_US files to the download. (default: false)
             "-cn" or "--download-cn": Adds CN files to the download. (default: false)
             "-tw" or "--download-tw": Adds TW files to the download. (default: false)
-            "-o <folder>" or "--output-folder <folder>": Sets the output folder. (default: DownloadOutput)
+            "-o <folder>" or "--output-folder <folder>": Sets the output folder. (default: DownloaderOutput)
             "-m <count>" or "--max-downloads <count>": Sets the maximum number of concurrent downloads. (default: 16)
             "-p <platform>" or "--platform <platform>": Sets the version of assets to download.
                 Valid options: Android, iOS (default: Android)

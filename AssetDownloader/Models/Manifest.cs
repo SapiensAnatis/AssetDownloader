@@ -1,9 +1,13 @@
-﻿namespace AssetDownloader.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace AssetDownloader.Models;
 
 public class Manifest
 {
     public List<AssetCategory> Categories { get; }
+
     public List<AssetInfo> RawAssets { get; }
+
     public IEnumerable<AssetInfo> AllAssets =>
         Categories.SelectMany(c => c.Assets).Concat(RawAssets);
 

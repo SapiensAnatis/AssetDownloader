@@ -27,7 +27,7 @@ public static class Utils
         bool downloadCn = false;
         bool downloadTw = false;
         int maxConcurrent = 16;
-        string platformName = Constants.Android;
+        bool downloadIos = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -68,16 +68,9 @@ public static class Utils
                     i++;
                     validArguments &= int.TryParse(args[i], out maxConcurrent);
                     break;
-                case "-p"
-                or "--platform":
-                    i++;
-                    var input = args[i].ToLower();
-                    if (input == Constants.Android.ToLower())
-                        platformName = Constants.Android;
-                    else if (input == Constants.Ios.ToLower())
-                        platformName = Constants.Ios;
-                    else
-                        validArguments = false;
+                case "-ios"
+                or "--download-ios":
+                    downloadIos = true;
                     break;
             }
         }
@@ -93,7 +86,7 @@ public static class Utils
             DownloadEu = downloadEu,
             DownloadTw = downloadTw,
             MaxConcurrent = maxConcurrent,
-            PlatformName = platformName,
+            DownloadIos = downloadIos,
             IsValid = validArguments
         };
     }
@@ -108,11 +101,11 @@ public static class Utils
         );
 
         string outputFolder = InputPromptString(
-            $"Filepath for download result: (leave blank for ./DownloadOutput)"
+            $"Filepath for download result: (leave blank for ./DownloaderOutput)"
         );
 
         if (string.IsNullOrWhiteSpace(outputFolder))
-            outputFolder = "DownloadOutput";
+            outputFolder = "DownloaderOutput";
 
         result.OutputFolder = outputFolder;
 
@@ -121,15 +114,9 @@ public static class Utils
             16
         );
 
-        string platform = InputPromptString(
-            "Target asset platform? (allowed values: 'iOS', 'Android', leave blank for Android)"
+        result.DownloadIos = InputPromptBool(
+            "The downloader will download Android assets by default. Also download iOS assets? (see README for more info)"
         );
-        result.PlatformName = platform.ToLower() switch
-        {
-            "android" => Constants.Android,
-            "ios" => Constants.Ios,
-            _ => Constants.Android
-        };
 
         result.DownloadEn = InputPromptBool("Download American English localisation assets?");
         result.DownloadEu = InputPromptBool(
