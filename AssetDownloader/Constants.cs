@@ -28,8 +28,7 @@ public static class Constants
             "-tw" or "--download-tw": Adds TW files to the download. (default: false)
             "-o <folder>" or "--output-folder <folder>": Sets the output folder. (default: DownloaderOutput)
             "-m <count>" or "--max-downloads <count>": Sets the maximum number of concurrent downloads. (default: 16)
-            "-p <platform>" or "--platform <platform>": Sets the version of assets to download.
-                Valid options: Android, iOS (default: Android)
+            "-ios" or "--download-ios": Toggles additional downloading of iOS assets.
         """;
 
     public const string JpManifest = "assetbundle.manifest.json";
